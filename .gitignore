@@ -1,0 +1,29 @@
+# Nix/direnv
+.direnv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI assistants
+.claude/
+.codex/
+.opencode/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Editor
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Log
+*.log
