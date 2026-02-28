@@ -51,6 +51,9 @@ func TruncateWithEllipsis(s string, maxLen int) string {
 // FormatDuration formats a duration in the "1h23m45s" style.
 func FormatDuration(d time.Duration) string {
 	d = d.Truncate(time.Second)
+	if d < 0 {
+		return "-"
+	}
 	if d == 0 {
 		return "0s"
 	}

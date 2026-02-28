@@ -86,7 +86,11 @@ func (s *Service) FetchLatestStatus(ctx context.Context, machines []StateMachine
 	result := make([]StateMachine, len(machines))
 	copy(result, machines)
 
-	sem := make(chan struct{}, s.MaxConcurrency)
+	concurrency := s.MaxConcurrency
+	if concurrency <= 0 {
+		concurrency = 1
+	}
+	sem := make(chan struct{}, concurrency)
 	var mu sync.Mutex
 	var firstErr error
 	var wg sync.WaitGroup
@@ -143,7 +147,11 @@ func (s *Service) FetchExecutionHistory(ctx context.Context, stateMachineARN str
 	}
 
 	executions := make([]Execution, len(listOut.Executions))
-	sem := make(chan struct{}, s.MaxConcurrency)
+	concurrency := s.MaxConcurrency
+	if concurrency <= 0 {
+		concurrency = 1
+	}
+	sem := make(chan struct{}, concurrency)
 	var mu sync.Mutex
 	var firstErr error
 	var wg sync.WaitGroup
