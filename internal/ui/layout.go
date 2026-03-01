@@ -1,7 +1,8 @@
 package ui
 
 // bulletWidth is the number of display columns occupied by " ●".
-// The BLACK CIRCLE (U+25CF) is a full-width character that occupies 2 columns,
+// U+25CF has East Asian Width "Ambiguous"; display width is typically 1 in
+// Western terminals and 2 in CJK terminals. We assume 2 columns for the bullet
 // plus 1 column for the preceding space, giving 3 total.
 const bulletWidth = 3
 
@@ -16,7 +17,8 @@ func calcPanelWidths(totalWidth int) (leftW, rightW int) {
 // formatSMLine formats a single state machine row for the left panel.
 // If status is empty, returns name only. Otherwise appends " ●" with the name
 // truncated so the bullet fits within panelWidth display columns.
-// The BLACK CIRCLE (●) is a full-width character and counts as 2 display columns.
+// The BLACK CIRCLE (U+25CF, ●) has East Asian Width "Ambiguous" and is assumed
+// to occupy 2 display columns in CJK terminals.
 func formatSMLine(name, status string, panelWidth int) string {
 	if status == "" {
 		return name

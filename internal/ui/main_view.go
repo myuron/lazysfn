@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	leftViewName  = "left"
+	// leftViewName is the gocui view name for the left (state machine list) panel.
+	leftViewName = "left"
+	// rightViewName is the gocui view name for the right (detail) panel.
 	rightViewName = "right"
 )
 
@@ -58,8 +60,7 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 	}
 
 	v.Clear()
-	_, panelH := v.Size()
-	panelW, _ := v.Size()
+	panelW, panelH := v.Size()
 
 	if len(a.machines) == 0 {
 		if _, err := fmt.Fprintln(v, "(0 state machines)"); err != nil {
@@ -68,16 +69,26 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 		return nil
 	}
 
-	for i, m := range a.machines {
-		// Scroll: only render rows visible in the panel.
-		if i >= panelH {
-			break
-		}
+	// availableWidth is the usable width after the 2-character prefix ("> " or "  ").
+	availableWidth := panelW - 2
 
-		line := formatSMLine(m.Name, m.LatestStatus, panelW)
+	// Scroll: compute the first visible index so the cursor is always in view.
+	start := a.smCursor - (panelH - 1)
+	if start < 0 {
+		start = 0
+	}
+	end := start + panelH
+	if end > len(a.machines) {
+		end = len(a.machines)
+	}
+
+	for localIdx, m := range a.machines[start:end] {
+		absIdx := start + localIdx
+
+		line := formatSMLine(m.Name, m.LatestStatus, availableWidth)
 
 		prefix := "  "
-		if i == a.smCursor {
+		if absIdx == a.smCursor {
 			prefix = "> "
 		}
 		if _, err := fmt.Fprintln(v, prefix+line); err != nil {

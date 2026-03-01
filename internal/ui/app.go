@@ -10,7 +10,9 @@ import (
 )
 
 const (
-	modalName  = "profileModal"
+	// modalName is the gocui view name for the profile selection modal.
+	modalName = "profileModal"
+	// modalWidth is the fixed display width (in columns) of the profile selection modal.
 	modalWidth = 40
 	// minModalHeight is the minimum height of the profile modal (1 content row + 2 border rows).
 	minModalHeight = 3

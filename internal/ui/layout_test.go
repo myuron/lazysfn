@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ func TestCalcPanelWidths(t *testing.T) {
 		{7, 1, 6},
 	}
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(fmt.Sprintf("totalWidth=%d", tt.totalWidth), func(t *testing.T) {
 			gotLeft, gotRight := calcPanelWidths(tt.totalWidth)
 			if gotLeft != tt.wantLeft || gotRight != tt.wantRight {
 				t.Errorf("calcPanelWidths(%d) = (%d, %d), want (%d, %d)",
