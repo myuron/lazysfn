@@ -1,6 +1,10 @@
 package ui
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/myuron/lazysfn/internal/config"
+)
 
 func TestCalcModalHeight(t *testing.T) {
 	tests := []struct {
@@ -22,16 +26,22 @@ func TestCalcModalHeight(t *testing.T) {
 			want:         24,
 		},
 		{
-			name:         "zero profiles",
+			name:         "zero profiles returns minModalHeight",
 			profileCount: 0,
 			screenHeight: 10,
-			want:         2,
+			want:         minModalHeight,
 		},
 		{
 			name:         "exactly at 80% boundary",
 			profileCount: 10,
 			screenHeight: 10,
 			want:         8,
+		},
+		{
+			name:         "very small screen returns minModalHeight",
+			profileCount: 0,
+			screenHeight: 1,
+			want:         minModalHeight,
 		},
 	}
 	for _, tt := range tests {
@@ -101,4 +111,24 @@ func TestCalcModalPosition(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetSelectedProfile(t *testing.T) {
+	t.Run("returns zero value when no selection made", func(t *testing.T) {
+		app := NewApp([]config.Profile{{Name: "dev"}, {Name: "prod"}})
+		got := app.GetSelectedProfile()
+		if got != (config.Profile{}) {
+			t.Errorf("GetSelectedProfile() = %v, want zero value", got)
+		}
+	})
+
+	t.Run("returns profile after manual assignment", func(t *testing.T) {
+		want := config.Profile{Name: "staging"}
+		app := NewApp([]config.Profile{want})
+		app.selectedProfile = want
+		got := app.GetSelectedProfile()
+		if got != want {
+			t.Errorf("GetSelectedProfile() = %v, want %v", got, want)
+		}
+	})
 }

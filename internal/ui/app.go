@@ -11,6 +11,8 @@ import (
 const (
 	modalName  = "profileModal"
 	modalWidth = 40
+	// minModalHeight is the minimum height of the profile modal (1 content row + 2 border rows).
+	minModalHeight = 3
 )
 
 // App manages the overall application state and TUI lifecycle.
@@ -26,6 +28,12 @@ func NewApp(profiles []config.Profile) *App {
 	return &App{
 		profiles: profiles,
 	}
+}
+
+// GetSelectedProfile returns the profile chosen by the user after Run completes.
+// It returns a zero-value config.Profile if no selection was made.
+func (a *App) GetSelectedProfile() config.Profile {
+	return a.selectedProfile
 }
 
 // Run starts the gocui main loop and displays the profile selection modal.
@@ -126,11 +134,15 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 
 // calcModalHeight calculates the height of the profile modal.
 // It returns profileCount + 2 (for borders), capped at 80% of screenHeight.
+// The result is always at least minModalHeight to keep the modal usable.
 func calcModalHeight(profileCount, screenHeight int) int {
 	h := profileCount + 2
 	max := int(float64(screenHeight) * 0.8)
 	if h > max {
 		h = max
+	}
+	if h < minModalHeight {
+		h = minModalHeight
 	}
 	return h
 }
