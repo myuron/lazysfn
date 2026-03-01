@@ -5,11 +5,14 @@ import (
 	"fmt"
 
 	"github.com/jroimartin/gocui"
+	"github.com/myuron/lazysfn/internal/aws"
 	"github.com/myuron/lazysfn/internal/config"
 )
 
 const (
-	modalName  = "profileModal"
+	// modalName is the gocui view name for the profile selection modal.
+	modalName = "profileModal"
+	// modalWidth is the fixed display width (in columns) of the profile selection modal.
 	modalWidth = 40
 	// minModalHeight is the minimum height of the profile modal (1 content row + 2 border rows).
 	minModalHeight = 3
@@ -21,6 +24,8 @@ type App struct {
 	selectedProfile config.Profile
 	cursor          int
 	gui             *gocui.Gui
+	machines        []aws.StateMachine
+	smCursor        int
 }
 
 // NewApp initializes and returns a new App with the given profiles.
@@ -76,7 +81,9 @@ func (a *App) layout(g *gocui.Gui) error {
 		if i == a.cursor {
 			prefix = "> "
 		}
-		fmt.Fprintln(v, prefix+p.Name)
+		if _, err := fmt.Fprintln(v, prefix+p.Name); err != nil {
+			return fmt.Errorf("writing profile row: %w", err)
+		}
 	}
 
 	if _, err := g.SetCurrentView(modalName); err != nil {
