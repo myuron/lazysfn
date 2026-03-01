@@ -1,0 +1,146 @@
+// Package ui provides TUI formatting and rendering utilities.
+package ui
+
+import (
+	"fmt"
+
+	"github.com/jroimartin/gocui"
+	"github.com/myuron/lazysfn/internal/config"
+)
+
+const (
+	modalName  = "profileModal"
+	modalWidth = 40
+)
+
+// App manages the overall application state and TUI lifecycle.
+type App struct {
+	profiles        []config.Profile
+	selectedProfile config.Profile
+	cursor          int
+	gui             *gocui.Gui
+}
+
+// NewApp initializes and returns a new App with the given profiles.
+func NewApp(profiles []config.Profile) *App {
+	return &App{
+		profiles: profiles,
+	}
+}
+
+// Run starts the gocui main loop and displays the profile selection modal.
+func (a *App) Run() error {
+	g, err := gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
+		return fmt.Errorf("creating gui: %w", err)
+	}
+	defer g.Close()
+
+	a.gui = g
+	g.SetManagerFunc(a.layout)
+
+	if err := a.setKeybindings(g); err != nil {
+		return fmt.Errorf("setting keybindings: %w", err)
+	}
+
+	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+		return fmt.Errorf("main loop: %w", err)
+	}
+	return nil
+}
+
+// layout is the gocui manager function that renders the profile modal on each resize.
+func (a *App) layout(g *gocui.Gui) error {
+	screenW, screenH := g.Size()
+	modalH := calcModalHeight(len(a.profiles), screenH)
+	x0, y0, x1, y1 := calcModalPosition(screenW, screenH, modalWidth, modalH)
+
+	v, err := g.SetView(modalName, x0, y0, x1, y1)
+	if err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("setting view: %w", err)
+	}
+
+	v.Clear()
+	v.Title = "Select Profile"
+
+	for i, p := range a.profiles {
+		prefix := "  "
+		if i == a.cursor {
+			prefix = "> "
+		}
+		fmt.Fprintln(v, prefix+p.Name)
+	}
+
+	if _, err := g.SetCurrentView(modalName); err != nil {
+		return fmt.Errorf("setting current view: %w", err)
+	}
+
+	return nil
+}
+
+// setKeybindings registers all keybindings for the profile modal.
+func (a *App) setKeybindings(g *gocui.Gui) error {
+	if err := g.SetKeybinding(modalName, 'j', gocui.ModNone, a.cursorDown); err != nil {
+		return fmt.Errorf("binding j: %w", err)
+	}
+	if err := g.SetKeybinding(modalName, 'k', gocui.ModNone, a.cursorUp); err != nil {
+		return fmt.Errorf("binding k: %w", err)
+	}
+	if err := g.SetKeybinding(modalName, gocui.KeyEnter, gocui.ModNone, a.selectProfile); err != nil {
+		return fmt.Errorf("binding Enter: %w", err)
+	}
+	if err := g.SetKeybinding(modalName, 'q', gocui.ModNone, quit); err != nil {
+		return fmt.Errorf("binding q: %w", err)
+	}
+	return nil
+}
+
+// cursorDown moves the cursor down one position (does not wrap at the end).
+func (a *App) cursorDown(g *gocui.Gui, v *gocui.View) error {
+	if a.cursor < len(a.profiles)-1 {
+		a.cursor++
+	}
+	return nil
+}
+
+// cursorUp moves the cursor up one position (does not wrap at the beginning).
+func (a *App) cursorUp(g *gocui.Gui, v *gocui.View) error {
+	if a.cursor > 0 {
+		a.cursor--
+	}
+	return nil
+}
+
+// selectProfile sets the selected profile and quits the application.
+func (a *App) selectProfile(g *gocui.Gui, v *gocui.View) error {
+	if len(a.profiles) > 0 {
+		a.selectedProfile = a.profiles[a.cursor]
+	}
+	return gocui.ErrQuit
+}
+
+// quit exits the application by returning gocui.ErrQuit.
+func quit(g *gocui.Gui, v *gocui.View) error {
+	return gocui.ErrQuit
+}
+
+// calcModalHeight calculates the height of the profile modal.
+// It returns profileCount + 2 (for borders), capped at 80% of screenHeight.
+func calcModalHeight(profileCount, screenHeight int) int {
+	h := profileCount + 2
+	max := int(float64(screenHeight) * 0.8)
+	if h > max {
+		h = max
+	}
+	return h
+}
+
+// calcModalPosition calculates the centered position of a modal within the screen.
+// Returns (x0, y0, x1, y1) coordinates for gocui.SetView.
+func calcModalPosition(screenW, screenH, modalW, modalH int) (x0, y0, x1, y1 int) {
+	x0 = (screenW - modalW) / 2
+	y0 = (screenH - modalH) / 2
+	x1 = x0 + modalW
+	y1 = y0 + modalH
+	return
+}
