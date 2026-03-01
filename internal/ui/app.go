@@ -26,6 +26,9 @@ type App struct {
 	gui             *gocui.Gui
 	machines        []aws.StateMachine
 	smCursor        int
+	executions      []aws.Execution
+	loading         bool
+	spinnerFrame    int
 }
 
 // NewApp initializes and returns a new App with the given profiles.
