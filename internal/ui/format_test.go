@@ -189,6 +189,31 @@ func TestFilterMachines(t *testing.T) {
 	})
 }
 
+func TestHighlightMatch(t *testing.T) {
+	cases := []struct {
+		desc  string
+		input string
+		query string
+		want  string
+	}{
+		{"empty query returns name unchanged", "foo", "", "foo"},
+		{"no match returns name unchanged", "foo", "bar", "foo"},
+		{"exact match wraps whole name", "foo", "foo", "\033[7mfoo\033[0m"},
+		{"partial match wraps substring", "foobar", "oba", "fo\033[7moba\033[0mr"},
+		{"case insensitive: query upper, name lower", "foobar", "FOO", "\033[7mfoo\033[0mbar"},
+		{"case insensitive: query lower, name upper", "FOOBAR", "foo", "\033[7mFOO\033[0mBAR"},
+		{"only first occurrence highlighted", "abab", "ab", "\033[7mab\033[0mab"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			got := HighlightMatch(tc.input, tc.query)
+			if got != tc.want {
+				t.Errorf("HighlightMatch(%q, %q) = %q, want %q", tc.input, tc.query, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestFormatExecutionRow(t *testing.T) {
 	widths := ColumnWidths{
 		ID:         30,

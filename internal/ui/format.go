@@ -98,6 +98,25 @@ func FormatHeaderRow(widths ColumnWidths) string {
 	)
 }
 
+// HighlightMatch wraps the first case-insensitive occurrence of query in name
+// with ANSI reverse-video escape codes (\033[7m ... \033[0m).
+// Returns name unchanged if query is empty or not found.
+func HighlightMatch(name, query string) string {
+	if query == "" {
+		return name
+	}
+	lowerName := strings.ToLower(name)
+	lowerQuery := strings.ToLower(query)
+	idx := strings.Index(lowerName, lowerQuery)
+	if idx < 0 {
+		return name
+	}
+	before := name[:idx]
+	match := name[idx : idx+len(lowerQuery)]
+	after := name[idx+len(lowerQuery):]
+	return before + "\033[7m" + match + "\033[0m" + after
+}
+
 // FilterMachines returns the subset of machines whose Name contains query as a
 // case-insensitive substring. An empty query returns machines unchanged.
 // The returned slice is never nil; an unmatched query returns an empty slice.

@@ -170,10 +170,21 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 		end = len(visible)
 	}
 
+	const bullet = " \u25cf"
+
 	for localIdx, m := range visible[start:end] {
 		absIdx := start + localIdx
 
-		line := formatSMLine(m.Name, m.LatestStatus, availableWidth)
+		truncatedLine := formatSMLine(m.Name, m.LatestStatus, availableWidth)
+		line := truncatedLine
+		if a.searchQuery != "" {
+			if strings.HasSuffix(truncatedLine, bullet) {
+				namePart := strings.TrimSuffix(truncatedLine, bullet)
+				line = HighlightMatch(namePart, a.searchQuery) + bullet
+			} else {
+				line = HighlightMatch(truncatedLine, a.searchQuery)
+			}
+		}
 
 		prefix := "  "
 		if absIdx == a.smCursor {
