@@ -11,7 +11,7 @@ import (
 func TestHelpContent(t *testing.T) {
 	content := helpContent()
 
-	keys := []string{"?", "q", "R", "j", "k", "h", "l", "Tab", "Enter"}
+	keys := []string{"?", "Esc", "q", "R", "j", "k", "h", "l", "Tab", "Enter"}
 	for _, key := range keys {
 		if !strings.Contains(content, key) {
 			t.Errorf("helpContent() missing key %q", key)
@@ -83,21 +83,12 @@ func TestShowHelpModal_CloseRestoresFocus(t *testing.T) {
 		t.Fatalf("ShowHelpModal() error: %v", err)
 	}
 
-	// Simulate pressing q: retrieve the close handler and invoke it directly.
-	// gocui doesn't expose keybinding lookup, so we call ShowHelpModal again which
-	// reflects a fresh state; instead we just delete the view manually and verify
-	// the pattern works by invoking the close logic via a second ShowHelpModal.
-
-	// Re-open is not the right test; instead verify the modal view exists and
-	// delete it manually to simulate close, then check focus returns.
-	g.DeleteKeybindings(helpModalName)
-	if err := g.DeleteView(helpModalName); err != nil {
-		t.Fatalf("DeleteView: %v", err)
-	}
-	if _, err := g.SetCurrentView(leftViewName); err != nil {
-		t.Fatalf("SetCurrentView after close: %v", err)
+	// Invoke the real close handler (same code path as q/Esc/? keybindings).
+	if err := app.closeHelpModal(g, leftViewName); err != nil {
+		t.Fatalf("closeHelpModal() error: %v", err)
 	}
 
+	// Focus must be restored to the previous view.
 	cv := g.CurrentView()
 	if cv == nil || cv.Name() != leftViewName {
 		name := ""

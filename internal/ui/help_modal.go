@@ -39,16 +39,7 @@ func (a *App) ShowHelpModal(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	closeModal := func(g *gocui.Gui, v *gocui.View) error {
-		g.DeleteKeybindings(helpModalName)
-		if err := g.DeleteView(helpModalName); err != nil {
-			return fmt.Errorf("deleting help modal: %w", err)
-		}
-		if prevView != "" {
-			if _, err := g.SetCurrentView(prevView); err != nil {
-				return fmt.Errorf("restoring focus: %w", err)
-			}
-		}
-		return nil
+		return a.closeHelpModal(g, prevView)
 	}
 
 	if err := g.SetKeybinding(helpModalName, '?', gocui.ModNone, closeModal); err != nil {
@@ -67,10 +58,27 @@ func (a *App) ShowHelpModal(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
+// closeHelpModal removes the help modal view, cleans up its keybindings, and
+// restores focus to prevView. It is called by the ?, Esc, and q keybindings
+// registered in ShowHelpModal.
+func (a *App) closeHelpModal(g *gocui.Gui, prevView string) error {
+	g.DeleteKeybindings(helpModalName)
+	if err := g.DeleteView(helpModalName); err != nil {
+		return fmt.Errorf("deleting help modal: %w", err)
+	}
+	if prevView != "" {
+		if _, err := g.SetCurrentView(prevView); err != nil {
+			return fmt.Errorf("restoring focus: %w", err)
+		}
+	}
+	return nil
+}
+
 // helpContent returns the keybinding reference text shown in the help modal.
 func helpContent() string {
 	return ` Global
    ?       Toggle help
+   Esc     Close popup
    q       Quit / Close popup
    R       Refresh
 
