@@ -99,8 +99,11 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 	return nil
 }
 
-// setMainViewKeybindings registers j/k navigation for the left panel.
+// setMainViewKeybindings registers keybindings for both the left and right panels.
+// Left panel: j/k (navigation), q (quit), Tab/h/l/R (focus/refresh).
+// Right panel: j/k (scroll), q (quit), Tab/h/l/R (focus/refresh).
 func (a *App) setMainViewKeybindings(g *gocui.Gui) error {
+	// --- left panel ---
 	if err := g.SetKeybinding(leftViewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
 		return fmt.Errorf("binding j in left panel: %w", err)
 	}
@@ -110,6 +113,42 @@ func (a *App) setMainViewKeybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding(leftViewName, 'q', gocui.ModNone, quit); err != nil {
 		return fmt.Errorf("binding q in left panel: %w", err)
 	}
+	if err := g.SetKeybinding(leftViewName, gocui.KeyTab, gocui.ModNone, a.tabFocus); err != nil {
+		return fmt.Errorf("binding Tab in left panel: %w", err)
+	}
+	if err := g.SetKeybinding(leftViewName, 'h', gocui.ModNone, a.focusLeft); err != nil {
+		return fmt.Errorf("binding h in left panel: %w", err)
+	}
+	if err := g.SetKeybinding(leftViewName, 'l', gocui.ModNone, a.focusRight); err != nil {
+		return fmt.Errorf("binding l in left panel: %w", err)
+	}
+	if err := g.SetKeybinding(leftViewName, 'R', gocui.ModNone, a.refresh); err != nil {
+		return fmt.Errorf("binding R in left panel: %w", err)
+	}
+
+	// --- right panel ---
+	if err := g.SetKeybinding(rightViewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
+		return fmt.Errorf("binding j in right panel: %w", err)
+	}
+	if err := g.SetKeybinding(rightViewName, 'k', gocui.ModNone, a.smCursorUp); err != nil {
+		return fmt.Errorf("binding k in right panel: %w", err)
+	}
+	if err := g.SetKeybinding(rightViewName, 'q', gocui.ModNone, quit); err != nil {
+		return fmt.Errorf("binding q in right panel: %w", err)
+	}
+	if err := g.SetKeybinding(rightViewName, gocui.KeyTab, gocui.ModNone, a.tabFocus); err != nil {
+		return fmt.Errorf("binding Tab in right panel: %w", err)
+	}
+	if err := g.SetKeybinding(rightViewName, 'h', gocui.ModNone, a.focusLeft); err != nil {
+		return fmt.Errorf("binding h in right panel: %w", err)
+	}
+	if err := g.SetKeybinding(rightViewName, 'l', gocui.ModNone, a.focusRight); err != nil {
+		return fmt.Errorf("binding l in right panel: %w", err)
+	}
+	if err := g.SetKeybinding(rightViewName, 'R', gocui.ModNone, a.refresh); err != nil {
+		return fmt.Errorf("binding R in right panel: %w", err)
+	}
+
 	return nil
 }
 
