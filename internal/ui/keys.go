@@ -68,7 +68,9 @@ func (a *App) refresh(g *gocui.Gui, v *gocui.View) error {
 }
 
 // AdvanceSpinner increments the spinner frame and re-renders the right panel.
-// It is intended to be called from a ticker goroutine while loading is true.
+// It is intended to be called periodically from a ticker goroutine (via
+// g.Update) while a.loading is true. The caller is responsible for starting
+// and stopping the ticker around the loading period.
 func (a *App) AdvanceSpinner(g *gocui.Gui) error {
 	a.spinnerFrame = nextSpinnerFrame(a.spinnerFrame)
 	if err := a.RenderRightPanel(g, a.executions); err != nil {

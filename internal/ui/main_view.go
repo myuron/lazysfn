@@ -101,54 +101,42 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 
 // setMainViewKeybindings registers keybindings for both the left and right panels.
 // Left panel: j/k (navigation), q (quit), Tab/h/l/R (focus/refresh).
-// Right panel: j/k (scroll), q (quit), Tab/h/l/R (focus/refresh).
+// Right panel: j/k (move selection), q (quit), Tab/h/l/R (focus/refresh).
 func (a *App) setMainViewKeybindings(g *gocui.Gui) error {
-	// --- left panel ---
-	if err := g.SetKeybinding(leftViewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
-		return fmt.Errorf("binding j in left panel: %w", err)
+	if err := a.bindPanelKeys(g, leftViewName); err != nil {
+		return err
 	}
-	if err := g.SetKeybinding(leftViewName, 'k', gocui.ModNone, a.smCursorUp); err != nil {
-		return fmt.Errorf("binding k in left panel: %w", err)
+	if err := a.bindPanelKeys(g, rightViewName); err != nil {
+		return err
 	}
-	if err := g.SetKeybinding(leftViewName, 'q', gocui.ModNone, quit); err != nil {
-		return fmt.Errorf("binding q in left panel: %w", err)
-	}
-	if err := g.SetKeybinding(leftViewName, gocui.KeyTab, gocui.ModNone, a.tabFocus); err != nil {
-		return fmt.Errorf("binding Tab in left panel: %w", err)
-	}
-	if err := g.SetKeybinding(leftViewName, 'h', gocui.ModNone, a.focusLeft); err != nil {
-		return fmt.Errorf("binding h in left panel: %w", err)
-	}
-	if err := g.SetKeybinding(leftViewName, 'l', gocui.ModNone, a.focusRight); err != nil {
-		return fmt.Errorf("binding l in left panel: %w", err)
-	}
-	if err := g.SetKeybinding(leftViewName, 'R', gocui.ModNone, a.refresh); err != nil {
-		return fmt.Errorf("binding R in left panel: %w", err)
-	}
+	return nil
+}
 
-	// --- right panel ---
-	if err := g.SetKeybinding(rightViewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
-		return fmt.Errorf("binding j in right panel: %w", err)
+// bindPanelKeys registers the common set of keybindings (j/k/q/Tab/h/l/R) for
+// the given panel view. j/k move the state machine selection cursor; q quits;
+// Tab/h/l change focus; R refreshes both panels.
+func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
+	if err := g.SetKeybinding(viewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(rightViewName, 'k', gocui.ModNone, a.smCursorUp); err != nil {
-		return fmt.Errorf("binding k in right panel: %w", err)
+	if err := g.SetKeybinding(viewName, 'k', gocui.ModNone, a.smCursorUp); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(rightViewName, 'q', gocui.ModNone, quit); err != nil {
-		return fmt.Errorf("binding q in right panel: %w", err)
+	if err := g.SetKeybinding(viewName, 'q', gocui.ModNone, quit); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(rightViewName, gocui.KeyTab, gocui.ModNone, a.tabFocus); err != nil {
-		return fmt.Errorf("binding Tab in right panel: %w", err)
+	if err := g.SetKeybinding(viewName, gocui.KeyTab, gocui.ModNone, a.tabFocus); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(rightViewName, 'h', gocui.ModNone, a.focusLeft); err != nil {
-		return fmt.Errorf("binding h in right panel: %w", err)
+	if err := g.SetKeybinding(viewName, 'h', gocui.ModNone, a.focusLeft); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(rightViewName, 'l', gocui.ModNone, a.focusRight); err != nil {
-		return fmt.Errorf("binding l in right panel: %w", err)
+	if err := g.SetKeybinding(viewName, 'l', gocui.ModNone, a.focusRight); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(rightViewName, 'R', gocui.ModNone, a.refresh); err != nil {
-		return fmt.Errorf("binding R in right panel: %w", err)
+	if err := g.SetKeybinding(viewName, 'R', gocui.ModNone, a.refresh); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-
 	return nil
 }
 

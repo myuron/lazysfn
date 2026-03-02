@@ -55,19 +55,20 @@ func TestNextFocus(t *testing.T) {
 
 func TestNextSpinnerFrame(t *testing.T) {
 	tests := []struct {
+		name  string
 		frame int
 		want  int
 	}{
-		{frame: 0, want: 1},
-		{frame: 1, want: 2},
-		{frame: 2, want: 3},
-		{frame: 3, want: 0},
-		{frame: 7, want: 0},
-		{frame: 4, want: 1},
+		{name: "0->1", frame: 0, want: 1},
+		{name: "1->2", frame: 1, want: 2},
+		{name: "2->3", frame: 2, want: 3},
+		{name: "3->0 wraps", frame: 3, want: 0},
+		{name: "7->0 wraps", frame: 7, want: 0},
+		{name: "4->1 wraps", frame: 4, want: 1},
 	}
 
 	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			got := nextSpinnerFrame(tt.frame)
 			if got != tt.want {
 				t.Errorf("nextSpinnerFrame(%d) = %d; want %d", tt.frame, got, tt.want)
