@@ -84,6 +84,19 @@ func FormatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
 
+// FormatHeaderRow formats the column header row string with the given column widths.
+func FormatHeaderRow(widths ColumnWidths) string {
+	return fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s %s",
+		widths.ID, "ID",
+		widths.Status, "STATUS",
+		widths.FailState, "FAIL STATE",
+		widths.StartTime, "START TIME",
+		widths.StopTime, "STOP TIME",
+		widths.Duration, "DURATION",
+		"INPUT PARAM",
+	)
+}
+
 // FormatExecutionRow formats an execution as a single row string with the given column widths.
 func FormatExecutionRow(exec aws.Execution, widths ColumnWidths) string {
 	id := TruncateWithEllipsis(exec.ID, widths.ID)

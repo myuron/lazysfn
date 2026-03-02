@@ -158,6 +158,10 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 	panelW, _ := v.Size()
 	widths := defaultColumnWidths(panelW)
 
+	if _, err := fmt.Fprintln(v, FormatHeaderRow(widths)); err != nil {
+		return fmt.Errorf("writing header row: %w", err)
+	}
+
 	for _, exec := range a.executions {
 		row := FormatExecutionRow(exec, widths)
 		if _, err := fmt.Fprintln(v, row); err != nil {
