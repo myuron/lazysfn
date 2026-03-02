@@ -21,6 +21,11 @@ func (a *App) SetupMainView(g *gocui.Gui, machines []aws.StateMachine) error {
 	a.machines = machines
 	a.smCursor = 0
 
+	// Switch to main view manager first. SetManagerFunc internally calls
+	// SetManager which clears all views, keybindings, and currentView.
+	// Everything must be re-created after this call.
+	g.SetManagerFunc(a.mainViewManager)
+
 	screenW, screenH := g.Size()
 	leftW, _ := calcPanelWidths(screenW)
 
@@ -42,17 +47,13 @@ func (a *App) SetupMainView(g *gocui.Gui, machines []aws.StateMachine) error {
 		return fmt.Errorf("setting main view keybindings: %w", err)
 	}
 
-	if _, err := g.SetCurrentView(leftViewName); err != nil {
-		return fmt.Errorf("setting current view to left panel: %w", err)
+	// Global quit keybindings (re-register after SetManagerFunc cleared them).
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+		return fmt.Errorf("binding Ctrl+C: %w", err)
 	}
 
-	// Switch to main view manager for resize handling.
-	g.SetManagerFunc(a.mainViewManager)
-
-	// Delete the profile modal and its keybindings (no longer needed).
-	g.DeleteKeybindings(modalName)
-	if err := g.DeleteView(modalName); err != nil && err != gocui.ErrUnknownView {
-		return fmt.Errorf("deleting profile modal: %w", err)
+	if _, err := g.SetCurrentView(leftViewName); err != nil {
+		return fmt.Errorf("setting current view to left panel: %w", err)
 	}
 
 	// Mark as main view mode.
