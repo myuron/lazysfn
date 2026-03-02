@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jroimartin/gocui"
 	"github.com/myuron/lazysfn/internal/aws"
@@ -32,7 +33,9 @@ const (
 // The modal shows the error text and closes on Enter or q, returning to profile selection.
 func (a *App) ShowErrorModal(g *gocui.Gui, msg string) error {
 	screenW, screenH := g.Size()
-	modalH := calcErrorModalHeight(msg)
+	innerW := errorModalWidth - 2 // subtract border columns
+	wrapped := wrapText(msg, innerW)
+	modalH := calcErrorModalHeight(wrapped)
 	x0, y0, x1, y1 := calcModalPosition(screenW, screenH, errorModalWidth, modalH)
 
 	v, err := g.SetView(errorModalName, x0, y0, x1, y1)
@@ -42,7 +45,7 @@ func (a *App) ShowErrorModal(g *gocui.Gui, msg string) error {
 
 	v.Clear()
 	v.Title = "Error"
-	if _, err := fmt.Fprint(v, msg); err != nil {
+	if _, err := fmt.Fprint(v, wrapped); err != nil {
 		return fmt.Errorf("writing error message: %w", err)
 	}
 
@@ -78,6 +81,42 @@ func (a *App) ShowErrorModal(g *gocui.Gui, msg string) error {
 	}
 
 	return nil
+}
+
+// wrapText wraps text so that each line is at most width runes wide,
+// breaking at word boundaries. Existing newlines are preserved.
+// Long words that exceed width are placed on their own line without splitting.
+func wrapText(text string, width int) string {
+	if width <= 0 {
+		return text
+	}
+	var result strings.Builder
+	for i, line := range strings.Split(text, "\n") {
+		if i > 0 {
+			result.WriteByte('\n')
+		}
+		words := strings.Fields(line)
+		if len(words) == 0 {
+			continue
+		}
+		lineLen := 0
+		for j, word := range words {
+			wordLen := utf8.RuneCountInString(word)
+			if j == 0 {
+				result.WriteString(word)
+				lineLen = wordLen
+			} else if lineLen+1+wordLen <= width {
+				result.WriteByte(' ')
+				result.WriteString(word)
+				lineLen += 1 + wordLen
+			} else {
+				result.WriteByte('\n')
+				result.WriteString(word)
+				lineLen = wordLen
+			}
+		}
+	}
+	return result.String()
 }
 
 // calcErrorModalHeight returns the modal height for the given message.

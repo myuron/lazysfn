@@ -71,6 +71,13 @@ func (a *App) Run() error {
 		return fmt.Errorf("setting keybindings: %w", err)
 	}
 
+	// Global Ctrl+C quit (fallback when no view-specific binding matches).
+	// Note: this binding is cleared when SetupMainView calls SetManagerFunc,
+	// so SetupMainView re-registers it.
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+		return fmt.Errorf("binding Ctrl+C: %w", err)
+	}
+
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		return fmt.Errorf("main loop: %w", err)
 	}
