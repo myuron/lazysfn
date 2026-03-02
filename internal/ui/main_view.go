@@ -46,6 +46,41 @@ func (a *App) SetupMainView(g *gocui.Gui, machines []aws.StateMachine) error {
 		return fmt.Errorf("setting current view to left panel: %w", err)
 	}
 
+	// Switch to main view manager for resize handling.
+	g.SetManagerFunc(a.mainViewManager)
+
+	// Delete the profile modal and its keybindings (no longer needed).
+	g.DeleteKeybindings(modalName)
+	if err := g.DeleteView(modalName); err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("deleting profile modal: %w", err)
+	}
+
+	// Mark as main view mode.
+	a.inMainView = true
+
+	return nil
+}
+
+// mainViewManager is the gocui manager function used in the main view.
+// It handles terminal resize by repositioning and re-rendering the left and right panels.
+func (a *App) mainViewManager(g *gocui.Gui) error {
+	screenW, screenH := g.Size()
+	leftW, _ := calcPanelWidths(screenW)
+
+	if _, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1); err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("resizing left panel: %w", err)
+	}
+	if _, err := g.SetView(rightViewName, leftW, 0, screenW-1, screenH-1); err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("resizing right panel: %w", err)
+	}
+
+	if err := a.RenderLeftPanel(g); err != nil {
+		return fmt.Errorf("rendering left panel on resize: %w", err)
+	}
+	if err := a.RenderRightPanel(g, a.executions); err != nil {
+		return fmt.Errorf("rendering right panel on resize: %w", err)
+	}
+
 	return nil
 }
 
@@ -141,17 +176,25 @@ func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
 }
 
 // smCursorDown moves the state machine cursor down one row and re-renders the left panel.
+// If OnSMSelect is set, it is called with the newly selected machine's ARN.
 func (a *App) smCursorDown(g *gocui.Gui, v *gocui.View) error {
 	if a.smCursor < len(a.machines)-1 {
 		a.smCursor++
+		if a.OnSMSelect != nil {
+			a.OnSMSelect(a.machines[a.smCursor].ARN)
+		}
 	}
 	return a.RenderLeftPanel(g)
 }
 
 // smCursorUp moves the state machine cursor up one row and re-renders the left panel.
+// If OnSMSelect is set, it is called with the newly selected machine's ARN.
 func (a *App) smCursorUp(g *gocui.Gui, v *gocui.View) error {
 	if a.smCursor > 0 {
 		a.smCursor--
+		if a.OnSMSelect != nil {
+			a.OnSMSelect(a.machines[a.smCursor].ARN)
+		}
 	}
 	return a.RenderLeftPanel(g)
 }

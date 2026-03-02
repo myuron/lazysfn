@@ -46,9 +46,9 @@ func (a *App) ShowErrorModal(g *gocui.Gui, msg string) error {
 		return fmt.Errorf("writing error message: %w", err)
 	}
 
-	// closeModal dismisses the error modal and returns focus to the profile
-	// selection modal. Errors at this stage always originate from profile
-	// loading, so returning to modalName is always correct here.
+	// closeModal dismisses the error modal and returns focus to the appropriate
+	// view. In main view mode, focus returns to the left panel; otherwise it
+	// returns to the profile selection modal.
 	closeModal := func(g *gocui.Gui, v *gocui.View) error {
 		// Delete keybindings first; gocui does not remove them automatically
 		// when a view is deleted, which would cause a leak on repeated calls.
@@ -56,8 +56,12 @@ func (a *App) ShowErrorModal(g *gocui.Gui, msg string) error {
 		if err := g.DeleteView(errorModalName); err != nil {
 			return fmt.Errorf("deleting error modal: %w", err)
 		}
-		if _, err := g.SetCurrentView(modalName); err != nil {
-			return fmt.Errorf("setting current view to profile modal: %w", err)
+		targetView := modalName
+		if a.inMainView {
+			targetView = leftViewName
+		}
+		if _, err := g.SetCurrentView(targetView); err != nil {
+			return fmt.Errorf("setting current view after error: %w", err)
 		}
 		return nil
 	}
