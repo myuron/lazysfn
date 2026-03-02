@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jroimartin/gocui"
 	"github.com/myuron/lazysfn/internal/aws"
@@ -100,17 +101,18 @@ func wrapText(text string, width int) string {
 		}
 		lineLen := 0
 		for j, word := range words {
+			wordLen := utf8.RuneCountInString(word)
 			if j == 0 {
 				result.WriteString(word)
-				lineLen = len(word)
-			} else if lineLen+1+len(word) <= width {
+				lineLen = wordLen
+			} else if lineLen+1+wordLen <= width {
 				result.WriteByte(' ')
 				result.WriteString(word)
-				lineLen += 1 + len(word)
+				lineLen += 1 + wordLen
 			} else {
 				result.WriteByte('\n')
 				result.WriteString(word)
-				lineLen = len(word)
+				lineLen = wordLen
 			}
 		}
 	}
