@@ -175,10 +175,10 @@ func (a *App) SetLoading(loading bool) { a.loading.Store(loading) }
 func (a *App) IsLoading() bool { return a.loading.Load() }
 
 // SetMachines updates the state machine list without resetting the cursor.
-// If search mode is active, the filtered list is recomputed from the new machines.
+// If a filter is active (searchMode or confirmed search), the filtered list is recomputed.
 func (a *App) SetMachines(machines []aws.StateMachine) {
 	a.machines = machines
-	if a.searchMode {
+	if a.filteredMachines != nil {
 		a.updateFilter()
 	}
 }

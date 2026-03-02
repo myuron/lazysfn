@@ -99,7 +99,7 @@ func FormatHeaderRow(widths ColumnWidths) string {
 }
 
 // HighlightMatch wraps the first case-insensitive occurrence of query in name
-// with ANSI reverse-video escape codes (\033[7m ... \033[0m).
+// with ANSI yellow foreground escape codes (\033[33m ... \033[0m).
 // Returns name unchanged if query is empty or not found.
 func HighlightMatch(name, query string) string {
 	if query == "" {

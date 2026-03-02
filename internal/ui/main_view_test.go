@@ -106,10 +106,11 @@ func TestCurrentSMARN(t *testing.T) {
 }
 
 func TestFilterMachinesOnSetMachines(t *testing.T) {
-	t.Run("SetMachines recomputes filter when searchMode active", func(t *testing.T) {
+	t.Run("SetMachines recomputes filter when filteredMachines is non-nil (active search)", func(t *testing.T) {
 		app := &App{
-			searchMode:  true,
-			searchQuery: "foo",
+			searchMode:       true,
+			searchQuery:      "foo",
+			filteredMachines: []aws.StateMachine{{Name: "foo-old", ARN: "arn:foo-old"}},
 		}
 		newMachines := []aws.StateMachine{
 			{Name: "foo-bar", ARN: "arn:foo-bar"},
@@ -119,16 +120,38 @@ func TestFilterMachinesOnSetMachines(t *testing.T) {
 
 		visible := app.visibleMachines()
 		if len(visible) != 1 {
-			t.Fatalf("After SetMachines with active search %q: got %d machines, want 1", "foo", len(visible))
+			t.Fatalf("After SetMachines with active filter %q: got %d machines, want 1", "foo", len(visible))
 		}
 		if visible[0].Name != "foo-bar" {
 			t.Errorf("After SetMachines: got %q, want %q", visible[0].Name, "foo-bar")
 		}
 	})
 
-	t.Run("SetMachines does not set filter when not in searchMode", func(t *testing.T) {
+	t.Run("SetMachines recomputes filter when filteredMachines is non-nil (confirmed search)", func(t *testing.T) {
 		app := &App{
-			searchMode: false,
+			searchMode:       false,
+			searchQuery:      "foo",
+			filteredMachines: []aws.StateMachine{{Name: "foo-old", ARN: "arn:foo-old"}},
+		}
+		newMachines := []aws.StateMachine{
+			{Name: "foo-new", ARN: "arn:foo-new"},
+			{Name: "baz-qux", ARN: "arn:baz-qux"},
+		}
+		app.SetMachines(newMachines)
+
+		visible := app.visibleMachines()
+		if len(visible) != 1 {
+			t.Fatalf("After SetMachines with confirmed filter %q: got %d machines, want 1", "foo", len(visible))
+		}
+		if visible[0].Name != "foo-new" {
+			t.Errorf("After SetMachines: got %q, want %q", visible[0].Name, "foo-new")
+		}
+	})
+
+	t.Run("SetMachines does not filter when filteredMachines is nil", func(t *testing.T) {
+		app := &App{
+			searchMode:       false,
+			filteredMachines: nil,
 		}
 		newMachines := []aws.StateMachine{
 			{Name: "foo-bar", ARN: "arn:foo-bar"},
@@ -137,7 +160,7 @@ func TestFilterMachinesOnSetMachines(t *testing.T) {
 		app.SetMachines(newMachines)
 
 		if app.filteredMachines != nil {
-			t.Errorf("SetMachines without searchMode: filteredMachines should be nil, got %v", app.filteredMachines)
+			t.Errorf("SetMachines with nil filter: filteredMachines should remain nil, got %v", app.filteredMachines)
 		}
 	})
 }
