@@ -3,6 +3,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/myuron/lazysfn/internal/aws"
@@ -95,6 +96,42 @@ func FormatHeaderRow(widths ColumnWidths) string {
 		widths.Duration, "DURATION",
 		"INPUT PARAM",
 	)
+}
+
+// HighlightMatch wraps the first case-insensitive occurrence of query in name
+// with ANSI yellow foreground escape codes (\033[33m ... \033[0m).
+// Returns name unchanged if query is empty or not found.
+func HighlightMatch(name, query string) string {
+	if query == "" {
+		return name
+	}
+	lowerName := strings.ToLower(name)
+	lowerQuery := strings.ToLower(query)
+	idx := strings.Index(lowerName, lowerQuery)
+	if idx < 0 {
+		return name
+	}
+	before := name[:idx]
+	match := name[idx : idx+len(lowerQuery)]
+	after := name[idx+len(lowerQuery):]
+	return before + "\033[33m" + match + "\033[0m" + after
+}
+
+// FilterMachines returns the subset of machines whose Name contains query as a
+// case-insensitive substring. An empty query returns machines unchanged.
+// The returned slice is never nil; an unmatched query returns an empty slice.
+func FilterMachines(machines []aws.StateMachine, query string) []aws.StateMachine {
+	if query == "" {
+		return machines
+	}
+	lower := strings.ToLower(query)
+	result := []aws.StateMachine{}
+	for _, m := range machines {
+		if strings.Contains(strings.ToLower(m.Name), lower) {
+			result = append(result, m)
+		}
+	}
+	return result
 }
 
 // FormatExecutionRow formats an execution as a single row string with the given column widths.

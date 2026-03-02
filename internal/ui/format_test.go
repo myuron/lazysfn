@@ -137,6 +137,83 @@ func TestFormatTime(t *testing.T) {
 	}
 }
 
+func TestFilterMachines(t *testing.T) {
+	machines := []aws.StateMachine{
+		{Name: "foo-machine", ARN: "arn:foo"},
+		{Name: "bar-machine", ARN: "arn:bar"},
+		{Name: "baz-machine", ARN: "arn:baz"},
+	}
+
+	t.Run("empty query returns all machines", func(t *testing.T) {
+		got := FilterMachines(machines, "")
+		if len(got) != len(machines) {
+			t.Errorf("FilterMachines with empty query: got %d machines, want %d", len(got), len(machines))
+		}
+	})
+
+	t.Run("query matches single machine", func(t *testing.T) {
+		got := FilterMachines(machines, "foo")
+		if len(got) != 1 {
+			t.Fatalf("FilterMachines(%q): got %d results, want 1", "foo", len(got))
+		}
+		if got[0].Name != "foo-machine" {
+			t.Errorf("FilterMachines(%q): got %q, want %q", "foo", got[0].Name, "foo-machine")
+		}
+	})
+
+	t.Run("query matches multiple machines", func(t *testing.T) {
+		got := FilterMachines(machines, "ba")
+		if len(got) != 2 {
+			t.Fatalf("FilterMachines(%q): got %d results, want 2", "ba", len(got))
+		}
+	})
+
+	t.Run("case insensitive match", func(t *testing.T) {
+		got := FilterMachines(machines, "FOO")
+		if len(got) != 1 {
+			t.Fatalf("FilterMachines(%q): got %d results, want 1", "FOO", len(got))
+		}
+		if got[0].Name != "foo-machine" {
+			t.Errorf("FilterMachines(%q): got %q, want %q", "FOO", got[0].Name, "foo-machine")
+		}
+	})
+
+	t.Run("no match returns empty non-nil slice", func(t *testing.T) {
+		got := FilterMachines(machines, "zzz")
+		if got == nil {
+			t.Error("FilterMachines with no match: got nil, want empty non-nil slice")
+		}
+		if len(got) != 0 {
+			t.Errorf("FilterMachines with no match: got %d results, want 0", len(got))
+		}
+	})
+}
+
+func TestHighlightMatch(t *testing.T) {
+	cases := []struct {
+		desc  string
+		input string
+		query string
+		want  string
+	}{
+		{"empty query returns name unchanged", "foo", "", "foo"},
+		{"no match returns name unchanged", "foo", "bar", "foo"},
+		{"exact match wraps whole name", "foo", "foo", "\033[33mfoo\033[0m"},
+		{"partial match wraps substring", "foobar", "oba", "fo\033[33moba\033[0mr"},
+		{"case insensitive: query upper, name lower", "foobar", "FOO", "\033[33mfoo\033[0mbar"},
+		{"case insensitive: query lower, name upper", "FOOBAR", "foo", "\033[33mFOO\033[0mBAR"},
+		{"only first occurrence highlighted", "abab", "ab", "\033[33mab\033[0mab"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			got := HighlightMatch(tc.input, tc.query)
+			if got != tc.want {
+				t.Errorf("HighlightMatch(%q, %q) = %q, want %q", tc.input, tc.query, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestFormatExecutionRow(t *testing.T) {
 	widths := ColumnWidths{
 		ID:         30,
