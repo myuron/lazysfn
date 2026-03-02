@@ -3,6 +3,7 @@ package ui
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/jroimartin/gocui"
 	"github.com/myuron/lazysfn/internal/aws"
@@ -27,8 +28,19 @@ type App struct {
 	machines        []aws.StateMachine
 	smCursor        int
 	executions      []aws.Execution
-	loading         bool
+	loading         atomic.Bool
 	spinnerFrame    int
+
+	// OnProfileSelected is called when a profile is selected in the modal.
+	// Set by main.go before calling Run. If nil, Run falls back to ErrQuit (old behavior).
+	OnProfileSelected func(g *gocui.Gui) error
+
+	// OnSMSelect is called when the state machine cursor changes.
+	// Set by main.go to trigger execution history loading.
+	OnSMSelect func(arn string)
+
+	// inMainView tracks whether the TUI is in main view mode (vs profile selection).
+	inMainView bool
 }
 
 // NewApp initializes and returns a new App with the given profiles.
@@ -129,12 +141,34 @@ func (a *App) cursorUp(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-// selectProfile sets the selected profile and quits the application.
+// selectProfile sets the selected profile and invokes OnProfileSelected if set.
+// If OnProfileSelected is nil, it falls back to returning gocui.ErrQuit (old behavior).
 func (a *App) selectProfile(g *gocui.Gui, v *gocui.View) error {
 	if len(a.profiles) > 0 {
 		a.selectedProfile = a.profiles[a.cursor]
 	}
+	if a.OnProfileSelected != nil {
+		return a.OnProfileSelected(g)
+	}
 	return gocui.ErrQuit
+}
+
+// SetLoading sets the loading state of the application.
+func (a *App) SetLoading(loading bool) { a.loading.Store(loading) }
+
+// IsLoading returns the current loading state.
+func (a *App) IsLoading() bool { return a.loading.Load() }
+
+// SetMachines updates the state machine list without resetting the cursor.
+func (a *App) SetMachines(machines []aws.StateMachine) { a.machines = machines }
+
+// CurrentSMARN returns the ARN of the currently selected state machine.
+// Returns "" if no machines are loaded.
+func (a *App) CurrentSMARN() string {
+	if a.smCursor < len(a.machines) {
+		return a.machines[a.smCursor].ARN
+	}
+	return ""
 }
 
 // quit exits the application by returning gocui.ErrQuit.
