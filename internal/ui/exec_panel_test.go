@@ -76,6 +76,43 @@ func TestDefaultColumnWidths(t *testing.T) {
 			wantDuration:   10,
 			wantInputParam: 86,
 		},
+		{
+			name:       "panelWidth=114 (exactly fixed total, InputParam=0)",
+			panelWidth: 114,
+			// Fixed total: 30+10+20+19+19+10+6 = 114
+			// InputParam = 114 - 114 = 0 (boundary: no space left)
+			wantID:         30,
+			wantStatus:     10,
+			wantFailState:  20,
+			wantStartTime:  19,
+			wantStopTime:   19,
+			wantDuration:   10,
+			wantInputParam: 0,
+		},
+		{
+			name:       "panelWidth=100 (narrower than fixed total, InputParam clamped to 0)",
+			panelWidth: 100,
+			// Fixed total: 114, panelWidth - fixedTotal = -14 → clamped to 0
+			wantID:         30,
+			wantStatus:     10,
+			wantFailState:  20,
+			wantStartTime:  19,
+			wantStopTime:   19,
+			wantDuration:   10,
+			wantInputParam: 0,
+		},
+		{
+			name:       "panelWidth=0 (extreme narrow, all clamped to 0)",
+			panelWidth: 0,
+			// panelWidth - fixedTotal = -114 → clamped to 0
+			wantID:         30,
+			wantStatus:     10,
+			wantFailState:  20,
+			wantStartTime:  19,
+			wantStopTime:   19,
+			wantDuration:   10,
+			wantInputParam: 0,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

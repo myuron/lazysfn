@@ -46,7 +46,13 @@ func (a *App) ShowErrorModal(g *gocui.Gui, msg string) error {
 		return fmt.Errorf("writing error message: %w", err)
 	}
 
+	// closeModal dismisses the error modal and returns focus to the profile
+	// selection modal. Errors at this stage always originate from profile
+	// loading, so returning to modalName is always correct here.
 	closeModal := func(g *gocui.Gui, v *gocui.View) error {
+		// Delete keybindings first; gocui does not remove them automatically
+		// when a view is deleted, which would cause a leak on repeated calls.
+		g.DeleteKeybindings(errorModalName)
 		if err := g.DeleteView(errorModalName); err != nil {
 			return fmt.Errorf("deleting error modal: %w", err)
 		}
@@ -124,8 +130,9 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 // Duration=10) plus 6 separator spaces are subtracted from panelWidth to
 // determine InputParam width.
 func defaultColumnWidths(panelWidth int) ColumnWidths {
-	// 6 fixed columns + 6 single-space separators between them = fixed overhead
-	separators := 6 // spaces between 7 columns
+	// 6 fixed columns (ID, Status, FailState, StartTime, StopTime, Duration) plus
+	// InputParam = 7 columns total, with 6 single-space separators between them.
+	separators := 6
 	fixedTotal := colWidthID + colWidthStatus + colWidthFailState +
 		colWidthStartTime + colWidthStopTime + colWidthDuration + separators
 
