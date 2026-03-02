@@ -108,7 +108,7 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 
 	v.Clear()
 
-	if a.loading {
+	if a.loading.Load() {
 		frame := string(spinnerFrames[a.spinnerFrame%len(spinnerFrames)])
 		if _, err := fmt.Fprintf(v, "Loading %s", frame); err != nil {
 			return fmt.Errorf("writing spinner: %w", err)

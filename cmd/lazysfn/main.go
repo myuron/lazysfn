@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -64,11 +65,29 @@ func run() error {
 		}
 
 		// Wire up SM selection handler.
+		// fetchCancel and fetchMu guard against stale responses when the user
+		// moves the cursor faster than FetchExecutionHistory completes.
+		var (
+			fetchCancel context.CancelFunc
+			fetchMu     sync.Mutex
+		)
 		app.OnSMSelect = func(arn string) {
+			fetchMu.Lock()
+			if fetchCancel != nil {
+				fetchCancel()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			fetchCancel = cancel
+			fetchMu.Unlock()
+
 			go func() {
 				app.SetLoading(true)
-				executions, err := svc.FetchExecutionHistory(context.Background(), arn)
+				executions, err := svc.FetchExecutionHistory(ctx, arn)
 				app.SetLoading(false)
+				if ctx.Err() != nil {
+					// A newer selection has already cancelled this request; discard.
+					return
+				}
 				g.Update(func(g *gocui.Gui) error {
 					if err != nil {
 						return app.ShowErrorModal(g, fmt.Sprintf("loading executions: %v", err))

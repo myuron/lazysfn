@@ -3,6 +3,7 @@ package ui
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/jroimartin/gocui"
 	"github.com/myuron/lazysfn/internal/aws"
@@ -27,7 +28,7 @@ type App struct {
 	machines        []aws.StateMachine
 	smCursor        int
 	executions      []aws.Execution
-	loading         bool
+	loading         atomic.Bool
 	spinnerFrame    int
 
 	// OnProfileSelected is called when a profile is selected in the modal.
@@ -153,10 +154,10 @@ func (a *App) selectProfile(g *gocui.Gui, v *gocui.View) error {
 }
 
 // SetLoading sets the loading state of the application.
-func (a *App) SetLoading(loading bool) { a.loading = loading }
+func (a *App) SetLoading(loading bool) { a.loading.Store(loading) }
 
 // IsLoading returns the current loading state.
-func (a *App) IsLoading() bool { return a.loading }
+func (a *App) IsLoading() bool { return a.loading.Load() }
 
 // SetMachines updates the state machine list without resetting the cursor.
 func (a *App) SetMachines(machines []aws.StateMachine) { a.machines = machines }
