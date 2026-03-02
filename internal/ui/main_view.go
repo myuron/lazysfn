@@ -30,14 +30,18 @@ func (a *App) SetupMainView(g *gocui.Gui, machines []aws.StateMachine) error {
 	leftW, _ := calcPanelWidths(screenW)
 
 	// Left panel: x0=0, y0=0, x1=leftW-1, y1=screenH-1
-	if _, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1); err != nil && err != gocui.ErrUnknownView {
+	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1)
+	if err != nil && err != gocui.ErrUnknownView {
 		return fmt.Errorf("creating left panel: %w", err)
 	}
+	lv.Title = "State Machine"
 
 	// Right panel: x0=leftW, y0=0, x1=screenW-1, y1=screenH-1
-	if _, err := g.SetView(rightViewName, leftW, 0, screenW-1, screenH-1); err != nil && err != gocui.ErrUnknownView {
+	rv, err := g.SetView(rightViewName, leftW, 0, screenW-1, screenH-1)
+	if err != nil && err != gocui.ErrUnknownView {
 		return fmt.Errorf("creating right panel: %w", err)
 	}
+	rv.Title = "history"
 
 	if err := a.RenderLeftPanel(g); err != nil {
 		return fmt.Errorf("rendering left panel: %w", err)
@@ -68,12 +72,17 @@ func (a *App) mainViewManager(g *gocui.Gui) error {
 	screenW, screenH := g.Size()
 	leftW, _ := calcPanelWidths(screenW)
 
-	if _, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1); err != nil && err != gocui.ErrUnknownView {
+	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1)
+	if err != nil && err != gocui.ErrUnknownView {
 		return fmt.Errorf("resizing left panel: %w", err)
 	}
-	if _, err := g.SetView(rightViewName, leftW, 0, screenW-1, screenH-1); err != nil && err != gocui.ErrUnknownView {
+	lv.Title = "State Machine"
+
+	rv, err := g.SetView(rightViewName, leftW, 0, screenW-1, screenH-1)
+	if err != nil && err != gocui.ErrUnknownView {
 		return fmt.Errorf("resizing right panel: %w", err)
 	}
+	rv.Title = "history"
 
 	if err := a.RenderLeftPanel(g); err != nil {
 		return fmt.Errorf("rendering left panel on resize: %w", err)
