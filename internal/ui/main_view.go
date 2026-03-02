@@ -157,9 +157,9 @@ func (a *App) setMainViewKeybindings(g *gocui.Gui) error {
 	return nil
 }
 
-// bindPanelKeys registers the common set of keybindings (j/k/q/Tab/h/l/R) for
+// bindPanelKeys registers the common set of keybindings (j/k/q/Tab/h/l/R/?) for
 // the given panel view. j/k move the state machine selection cursor; q quits;
-// Tab/h/l change focus; R refreshes both panels.
+// Tab/h/l change focus; R refreshes both panels; ? opens the keybinding help modal.
 func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
 	if err := g.SetKeybinding(viewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
@@ -180,6 +180,9 @@ func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
 	if err := g.SetKeybinding(viewName, 'R', gocui.ModNone, a.refresh); err != nil {
+		return fmt.Errorf("binding keys for %s: %w", viewName, err)
+	}
+	if err := g.SetKeybinding(viewName, '?', gocui.ModNone, a.ShowHelpModal); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
 	return nil
