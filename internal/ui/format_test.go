@@ -198,11 +198,11 @@ func TestHighlightMatch(t *testing.T) {
 	}{
 		{"empty query returns name unchanged", "foo", "", "foo"},
 		{"no match returns name unchanged", "foo", "bar", "foo"},
-		{"exact match wraps whole name", "foo", "foo", "\033[7mfoo\033[0m"},
-		{"partial match wraps substring", "foobar", "oba", "fo\033[7moba\033[0mr"},
-		{"case insensitive: query upper, name lower", "foobar", "FOO", "\033[7mfoo\033[0mbar"},
-		{"case insensitive: query lower, name upper", "FOOBAR", "foo", "\033[7mFOO\033[0mBAR"},
-		{"only first occurrence highlighted", "abab", "ab", "\033[7mab\033[0mab"},
+		{"exact match wraps whole name", "foo", "foo", "\033[33mfoo\033[0m"},
+		{"partial match wraps substring", "foobar", "oba", "fo\033[33moba\033[0mr"},
+		{"case insensitive: query upper, name lower", "foobar", "FOO", "\033[33mfoo\033[0mbar"},
+		{"case insensitive: query lower, name upper", "FOOBAR", "foo", "\033[33mFOO\033[0mBAR"},
+		{"only first occurrence highlighted", "abab", "ab", "\033[33mab\033[0mab"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {

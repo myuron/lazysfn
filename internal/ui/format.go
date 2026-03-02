@@ -114,7 +114,7 @@ func HighlightMatch(name, query string) string {
 	before := name[:idx]
 	match := name[idx : idx+len(lowerQuery)]
 	after := name[idx+len(lowerQuery):]
-	return before + "\033[7m" + match + "\033[0m" + after
+	return before + "\033[33m" + match + "\033[0m" + after
 }
 
 // FilterMachines returns the subset of machines whose Name contains query as a
