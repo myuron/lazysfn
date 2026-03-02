@@ -3,6 +3,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/myuron/lazysfn/internal/aws"
@@ -95,6 +96,23 @@ func FormatHeaderRow(widths ColumnWidths) string {
 		widths.Duration, "DURATION",
 		"INPUT PARAM",
 	)
+}
+
+// FilterMachines returns the subset of machines whose Name contains query as a
+// case-insensitive substring. An empty query returns machines unchanged.
+// The returned slice is never nil; an unmatched query returns an empty slice.
+func FilterMachines(machines []aws.StateMachine, query string) []aws.StateMachine {
+	if query == "" {
+		return machines
+	}
+	lower := strings.ToLower(query)
+	result := []aws.StateMachine{}
+	for _, m := range machines {
+		if strings.Contains(strings.ToLower(m.Name), lower) {
+			result = append(result, m)
+		}
+	}
+	return result
 }
 
 // FormatExecutionRow formats an execution as a single row string with the given column widths.

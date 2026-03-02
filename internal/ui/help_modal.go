@@ -86,6 +86,11 @@ func helpContent() string {
    j / k   Cursor down / up
    h / l   Focus left / right
    Tab     Switch panel
+   /       Incremental search (left panel)
+
+ Search Mode
+   Esc     Cancel search (show all)
+   Enter   Confirm search (keep filter)
 
  Profile Modal
    j / k   Cursor down / up

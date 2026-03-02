@@ -137,6 +137,58 @@ func TestFormatTime(t *testing.T) {
 	}
 }
 
+func TestFilterMachines(t *testing.T) {
+	machines := []aws.StateMachine{
+		{Name: "foo-machine", ARN: "arn:foo"},
+		{Name: "bar-machine", ARN: "arn:bar"},
+		{Name: "baz-machine", ARN: "arn:baz"},
+	}
+
+	t.Run("empty query returns all machines", func(t *testing.T) {
+		got := FilterMachines(machines, "")
+		if len(got) != len(machines) {
+			t.Errorf("FilterMachines with empty query: got %d machines, want %d", len(got), len(machines))
+		}
+	})
+
+	t.Run("query matches single machine", func(t *testing.T) {
+		got := FilterMachines(machines, "foo")
+		if len(got) != 1 {
+			t.Fatalf("FilterMachines(%q): got %d results, want 1", "foo", len(got))
+		}
+		if got[0].Name != "foo-machine" {
+			t.Errorf("FilterMachines(%q): got %q, want %q", "foo", got[0].Name, "foo-machine")
+		}
+	})
+
+	t.Run("query matches multiple machines", func(t *testing.T) {
+		got := FilterMachines(machines, "ba")
+		if len(got) != 2 {
+			t.Fatalf("FilterMachines(%q): got %d results, want 2", "ba", len(got))
+		}
+	})
+
+	t.Run("case insensitive match", func(t *testing.T) {
+		got := FilterMachines(machines, "FOO")
+		if len(got) != 1 {
+			t.Fatalf("FilterMachines(%q): got %d results, want 1", "FOO", len(got))
+		}
+		if got[0].Name != "foo-machine" {
+			t.Errorf("FilterMachines(%q): got %q, want %q", "FOO", got[0].Name, "foo-machine")
+		}
+	})
+
+	t.Run("no match returns empty non-nil slice", func(t *testing.T) {
+		got := FilterMachines(machines, "zzz")
+		if got == nil {
+			t.Error("FilterMachines with no match: got nil, want empty non-nil slice")
+		}
+		if len(got) != 0 {
+			t.Errorf("FilterMachines with no match: got %d results, want 0", len(got))
+		}
+	})
+}
+
 func TestFormatExecutionRow(t *testing.T) {
 	widths := ColumnWidths{
 		ID:         30,

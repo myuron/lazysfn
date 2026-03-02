@@ -31,6 +31,14 @@ type App struct {
 	loading         atomic.Bool
 	spinnerFrame    int
 
+	// searchMode indicates whether the incremental search bar is active.
+	searchMode bool
+	// filteredMachines holds the subset of machines matching the current search query.
+	// nil means no filter is applied; non-nil (possibly empty) means a filter is active.
+	filteredMachines []aws.StateMachine
+	// searchQuery holds the current search text while searchMode is active.
+	searchQuery string
+
 	// OnProfileSelected is called when a profile is selected in the modal.
 	// Set by main.go before calling Run. If nil, Run falls back to ErrQuit (old behavior).
 	OnProfileSelected func(g *gocui.Gui) error
@@ -167,13 +175,35 @@ func (a *App) SetLoading(loading bool) { a.loading.Store(loading) }
 func (a *App) IsLoading() bool { return a.loading.Load() }
 
 // SetMachines updates the state machine list without resetting the cursor.
-func (a *App) SetMachines(machines []aws.StateMachine) { a.machines = machines }
+// If search mode is active, the filtered list is recomputed from the new machines.
+func (a *App) SetMachines(machines []aws.StateMachine) {
+	a.machines = machines
+	if a.searchMode {
+		a.updateFilter()
+	}
+}
+
+// visibleMachines returns the list of state machines that should be displayed.
+// When a search filter is active (filteredMachines != nil) it returns filteredMachines;
+// otherwise it returns the full machines list.
+func (a *App) visibleMachines() []aws.StateMachine {
+	if a.filteredMachines != nil {
+		return a.filteredMachines
+	}
+	return a.machines
+}
+
+// updateFilter recomputes filteredMachines from the current machines and searchQuery.
+func (a *App) updateFilter() {
+	a.filteredMachines = FilterMachines(a.machines, a.searchQuery)
+}
 
 // CurrentSMARN returns the ARN of the currently selected state machine.
-// Returns "" if no machines are loaded.
+// Returns "" if no machines are loaded or the cursor is out of range.
 func (a *App) CurrentSMARN() string {
-	if a.smCursor < len(a.machines) {
-		return a.machines[a.smCursor].ARN
+	visible := a.visibleMachines()
+	if a.smCursor < len(visible) {
+		return visible[a.smCursor].ARN
 	}
 	return ""
 }

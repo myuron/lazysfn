@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jroimartin/gocui"
 	"github.com/myuron/lazysfn/internal/aws"
@@ -12,6 +13,10 @@ const (
 	leftViewName = "left"
 	// rightViewName is the gocui view name for the right (detail) panel.
 	rightViewName = "right"
+	// searchViewName is the gocui view name for the incremental search bar.
+	searchViewName = "search"
+	// searchBarHeight is the number of rows occupied by the search bar view (border + content).
+	searchBarHeight = 3
 )
 
 // SetupMainView initializes the main screen layout (left + right panels) in the gocui GUI.
@@ -68,11 +73,18 @@ func (a *App) SetupMainView(g *gocui.Gui, machines []aws.StateMachine) error {
 
 // mainViewManager is the gocui manager function used in the main view.
 // It handles terminal resize by repositioning and re-rendering the left and right panels.
+// In search mode the left panel is shortened and a search bar view is created below it.
 func (a *App) mainViewManager(g *gocui.Gui) error {
 	screenW, screenH := g.Size()
 	leftW, _ := calcPanelWidths(screenW)
 
-	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1)
+	// Determine left panel bottom edge based on search mode.
+	leftBottom := screenH - 1
+	if a.searchMode {
+		leftBottom = screenH - searchBarHeight - 1
+	}
+
+	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, leftBottom)
 	if err != nil && err != gocui.ErrUnknownView {
 		return fmt.Errorf("resizing left panel: %w", err)
 	}
@@ -84,6 +96,20 @@ func (a *App) mainViewManager(g *gocui.Gui) error {
 	}
 	rv.Title = "history"
 
+	if a.searchMode {
+		if err := a.ensureSearchView(g, screenW, screenH); err != nil {
+			return fmt.Errorf("ensuring search view: %w", err)
+		}
+		// Read the current search query from the editable view buffer and update filter.
+		if sv, svErr := g.View(searchViewName); svErr == nil {
+			query := strings.TrimSpace(sv.Buffer())
+			if query != a.searchQuery {
+				a.searchQuery = query
+				a.updateFilter()
+			}
+		}
+	}
+
 	if err := a.RenderLeftPanel(g); err != nil {
 		return fmt.Errorf("rendering left panel on resize: %w", err)
 	}
@@ -94,9 +120,25 @@ func (a *App) mainViewManager(g *gocui.Gui) error {
 	return nil
 }
 
+// ensureSearchView creates (or resizes) the search bar view below the left panel.
+func (a *App) ensureSearchView(g *gocui.Gui, screenW, screenH int) error {
+	leftW, _ := calcPanelWidths(screenW)
+	y0 := screenH - searchBarHeight
+	y1 := screenH - 1
+
+	sv, err := g.SetView(searchViewName, 0, y0, leftW-1, y1)
+	if err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("setting search view: %w", err)
+	}
+	sv.Title = "Search"
+	sv.Editable = true
+	return nil
+}
+
 // RenderLeftPanel re-renders the left panel with the current state machine list.
+// When a search filter is active, only the filtered machines are shown.
 // Each row shows the machine name with a status bullet on the right.
-// If the list is empty, displays "(0 state machines)".
+// If the visible list is empty, displays "(0 state machines)".
 // The cursor row is prefixed with "> ".
 func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 	v, err := g.View(leftViewName)
@@ -107,7 +149,8 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 	v.Clear()
 	panelW, panelH := v.Size()
 
-	if len(a.machines) == 0 {
+	visible := a.visibleMachines()
+	if len(visible) == 0 {
 		if _, err := fmt.Fprintln(v, "(0 state machines)"); err != nil {
 			return fmt.Errorf("writing empty message: %w", err)
 		}
@@ -123,11 +166,11 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 		start = 0
 	}
 	end := start + panelH
-	if end > len(a.machines) {
-		end = len(a.machines)
+	if end > len(visible) {
+		end = len(visible)
 	}
 
-	for localIdx, m := range a.machines[start:end] {
+	for localIdx, m := range visible[start:end] {
 		absIdx := start + localIdx
 
 		line := formatSMLine(m.Name, m.LatestStatus, availableWidth)
@@ -160,6 +203,7 @@ func (a *App) setMainViewKeybindings(g *gocui.Gui) error {
 // bindPanelKeys registers the common set of keybindings (j/k/q/Tab/h/l/R/?) for
 // the given panel view. j/k move the state machine selection cursor; q quits;
 // Tab/h/l change focus; R refreshes both panels; ? opens the keybinding help modal.
+// For the left panel, / enters search mode.
 func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
 	if err := g.SetKeybinding(viewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
@@ -185,29 +229,130 @@ func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
 	if err := g.SetKeybinding(viewName, '?', gocui.ModNone, a.ShowHelpModal); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
+	// The / key to enter search mode is only available from the left panel.
+	if viewName == leftViewName {
+		if err := g.SetKeybinding(viewName, '/', gocui.ModNone, a.enterSearchMode); err != nil {
+			return fmt.Errorf("binding / for %s: %w", viewName, err)
+		}
+	}
 	return nil
 }
 
 // smCursorDown moves the state machine cursor down one row and re-renders the left panel.
+// The bound check is against visibleMachines() so it respects the active search filter.
 // If OnSMSelect is set, it is called with the newly selected machine's ARN.
 func (a *App) smCursorDown(g *gocui.Gui, v *gocui.View) error {
-	if a.smCursor < len(a.machines)-1 {
+	visible := a.visibleMachines()
+	if a.smCursor < len(visible)-1 {
 		a.smCursor++
 		if a.OnSMSelect != nil {
-			a.OnSMSelect(a.machines[a.smCursor].ARN)
+			a.OnSMSelect(visible[a.smCursor].ARN)
 		}
 	}
 	return a.RenderLeftPanel(g)
 }
 
 // smCursorUp moves the state machine cursor up one row and re-renders the left panel.
+// The bound check is against visibleMachines() so it respects the active search filter.
 // If OnSMSelect is set, it is called with the newly selected machine's ARN.
 func (a *App) smCursorUp(g *gocui.Gui, v *gocui.View) error {
+	visible := a.visibleMachines()
 	if a.smCursor > 0 {
 		a.smCursor--
 		if a.OnSMSelect != nil {
-			a.OnSMSelect(a.machines[a.smCursor].ARN)
+			a.OnSMSelect(visible[a.smCursor].ARN)
 		}
+	}
+	return a.RenderLeftPanel(g)
+}
+
+// enterSearchMode activates the incremental search bar below the left panel.
+// It sets searchMode, creates the search view, registers search keybindings, and
+// moves focus to the search view.
+func (a *App) enterSearchMode(g *gocui.Gui, v *gocui.View) error {
+	a.searchMode = true
+	a.searchQuery = ""
+	a.filteredMachines = nil
+
+	screenW, screenH := g.Size()
+
+	// Shrink the left panel to make room for the search bar.
+	leftW, _ := calcPanelWidths(screenW)
+	leftBottom := screenH - searchBarHeight - 1
+	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, leftBottom)
+	if err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("resizing left panel for search: %w", err)
+	}
+	lv.Title = "State Machine"
+
+	if err := a.ensureSearchView(g, screenW, screenH); err != nil {
+		return fmt.Errorf("creating search view: %w", err)
+	}
+
+	// Register search view keybindings.
+	if err := g.SetKeybinding(searchViewName, gocui.KeyEsc, gocui.ModNone, a.exitSearchMode); err != nil {
+		return fmt.Errorf("binding Esc on search view: %w", err)
+	}
+	if err := g.SetKeybinding(searchViewName, gocui.KeyEnter, gocui.ModNone, a.confirmSearch); err != nil {
+		return fmt.Errorf("binding Enter on search view: %w", err)
+	}
+
+	if _, err := g.SetCurrentView(searchViewName); err != nil {
+		return fmt.Errorf("focusing search view: %w", err)
+	}
+	return a.RenderLeftPanel(g)
+}
+
+// exitSearchMode closes the search bar, clears the filter, resets the cursor, and
+// returns focus to the left panel.
+func (a *App) exitSearchMode(g *gocui.Gui, v *gocui.View) error {
+	a.searchMode = false
+	a.searchQuery = ""
+	a.filteredMachines = nil
+	a.smCursor = 0
+
+	g.DeleteKeybindings(searchViewName)
+	if err := g.DeleteView(searchViewName); err != nil {
+		return fmt.Errorf("deleting search view: %w", err)
+	}
+
+	// Restore the left panel to full height.
+	screenW, screenH := g.Size()
+	leftW, _ := calcPanelWidths(screenW)
+	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1)
+	if err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("restoring left panel: %w", err)
+	}
+	lv.Title = "State Machine"
+
+	if _, err := g.SetCurrentView(leftViewName); err != nil {
+		return fmt.Errorf("focusing left panel: %w", err)
+	}
+	return a.RenderLeftPanel(g)
+}
+
+// confirmSearch keeps the current filter active and returns focus to the left panel.
+// The cursor is reset to 0 so it is positioned at the first filtered result.
+func (a *App) confirmSearch(g *gocui.Gui, v *gocui.View) error {
+	a.searchMode = false
+	a.smCursor = 0
+
+	g.DeleteKeybindings(searchViewName)
+	if err := g.DeleteView(searchViewName); err != nil {
+		return fmt.Errorf("deleting search view: %w", err)
+	}
+
+	// Restore the left panel to full height.
+	screenW, screenH := g.Size()
+	leftW, _ := calcPanelWidths(screenW)
+	lv, err := g.SetView(leftViewName, 0, 0, leftW-1, screenH-1)
+	if err != nil && err != gocui.ErrUnknownView {
+		return fmt.Errorf("restoring left panel after search confirm: %w", err)
+	}
+	lv.Title = "State Machine"
+
+	if _, err := g.SetCurrentView(leftViewName); err != nil {
+		return fmt.Errorf("focusing left panel after search confirm: %w", err)
 	}
 	return a.RenderLeftPanel(g)
 }
