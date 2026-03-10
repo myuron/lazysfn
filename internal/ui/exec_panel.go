@@ -21,7 +21,7 @@ const (
 	spinnerFrames = `|/-\`
 
 	// Fixed column widths for the execution history table, matching SPEC.md.
-	colWidthID        = 30
+	colWidthID        = 12
 	colWidthStatus    = 10
 	colWidthFailState = 20
 	colWidthStartTime = 19
@@ -173,7 +173,7 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 }
 
 // defaultColumnWidths returns ColumnWidths for the right panel given its width.
-// Fixed columns (ID=30, Status=10, FailState=20, StartTime=19, StopTime=19,
+// Fixed columns (ID=12, Status=10, FailState=20, StartTime=19, StopTime=19,
 // Duration=10) plus 6 separator spaces are subtracted from panelWidth to
 // determine InputParam width.
 func defaultColumnWidths(panelWidth int) ColumnWidths {
