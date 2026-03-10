@@ -52,36 +52,36 @@ func TestDefaultColumnWidths(t *testing.T) {
 		{
 			name:       "panelWidth=120",
 			panelWidth: 120,
-			// Fixed widths: ID=30, Status=10, FailState=20, StartTime=19, StopTime=19, Duration=10
+			// Fixed widths: ID=12, Status=10, FailState=20, StartTime=19, StopTime=19, Duration=10
 			// Separators (spaces between 7 columns = 6 spaces): 6
-			// Total fixed: 30+10+20+19+19+10+6 = 114
-			// InputParam = 120 - 114 = 6
-			wantID:         30,
+			// Total fixed: 12+10+20+19+19+10+6 = 96
+			// InputParam = 120 - 96 = 24
+			wantID:         12,
 			wantStatus:     10,
 			wantFailState:  20,
 			wantStartTime:  19,
 			wantStopTime:   19,
 			wantDuration:   10,
-			wantInputParam: 6,
+			wantInputParam: 24,
 		},
 		{
 			name:       "panelWidth=200",
 			panelWidth: 200,
-			// InputParam = 200 - 114 = 86
-			wantID:         30,
+			// InputParam = 200 - 96 = 104
+			wantID:         12,
 			wantStatus:     10,
 			wantFailState:  20,
 			wantStartTime:  19,
 			wantStopTime:   19,
 			wantDuration:   10,
-			wantInputParam: 86,
+			wantInputParam: 104,
 		},
 		{
-			name:       "panelWidth=114 (exactly fixed total, InputParam=0)",
-			panelWidth: 114,
-			// Fixed total: 30+10+20+19+19+10+6 = 114
-			// InputParam = 114 - 114 = 0 (boundary: no space left)
-			wantID:         30,
+			name:       "panelWidth=96 (exactly fixed total, InputParam=0)",
+			panelWidth: 96,
+			// Fixed total: 12+10+20+19+19+10+6 = 96
+			// InputParam = 96 - 96 = 0 (boundary: no space left)
+			wantID:         12,
 			wantStatus:     10,
 			wantFailState:  20,
 			wantStartTime:  19,
@@ -90,10 +90,10 @@ func TestDefaultColumnWidths(t *testing.T) {
 			wantInputParam: 0,
 		},
 		{
-			name:       "panelWidth=100 (narrower than fixed total, InputParam clamped to 0)",
-			panelWidth: 100,
-			// Fixed total: 114, panelWidth - fixedTotal = -14 → clamped to 0
-			wantID:         30,
+			name:       "panelWidth=80 (narrower than fixed total, InputParam clamped to 0)",
+			panelWidth: 80,
+			// Fixed total: 96, panelWidth - fixedTotal = -16 → clamped to 0
+			wantID:         12,
 			wantStatus:     10,
 			wantFailState:  20,
 			wantStartTime:  19,
@@ -104,8 +104,8 @@ func TestDefaultColumnWidths(t *testing.T) {
 		{
 			name:       "panelWidth=0 (extreme narrow, all clamped to 0)",
 			panelWidth: 0,
-			// panelWidth - fixedTotal = -114 → clamped to 0
-			wantID:         30,
+			// panelWidth - fixedTotal = -96 → clamped to 0
+			wantID:         12,
 			wantStatus:     10,
 			wantFailState:  20,
 			wantStartTime:  19,

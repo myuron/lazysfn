@@ -216,7 +216,7 @@ func TestHighlightMatch(t *testing.T) {
 
 func TestFormatExecutionRow(t *testing.T) {
 	widths := ColumnWidths{
-		ID:         30,
+		ID:         12,
 		Status:     10,
 		FailState:  20,
 		StartTime:  19,
