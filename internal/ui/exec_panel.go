@@ -177,9 +177,11 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 	for i, exec := range a.executions {
 		row := FormatExecutionRow(exec, widths)
 		if i == a.execCursor {
-			// Apply bold cyan to the row, preserving status column colors.
-			// After each \033[0m reset, re-apply bold cyan so non-status parts stay cyan.
-			row = "\033[1;36m" + strings.ReplaceAll(row, "\033[0m", "\033[0m\033[1;36m") + "\033[0m"
+			if cv := g.CurrentView(); cv != nil && cv.Name() == rightViewName {
+				// Apply bold cyan to the row, preserving status column colors.
+				// After each \033[0m reset, re-apply bold cyan so non-status parts stay cyan.
+				row = "\033[1;36m" + strings.ReplaceAll(row, "\033[0m", "\033[0m\033[1;36m") + "\033[0m"
+			}
 		}
 		if _, err := fmt.Fprintln(v, row); err != nil {
 			return fmt.Errorf("writing execution row: %w", err)

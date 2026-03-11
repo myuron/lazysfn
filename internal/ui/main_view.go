@@ -188,8 +188,12 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 
 		prefix := "  "
 		if absIdx == a.smCursor {
-			prefix = "\033[1;36m> "
-			line = line + "\033[0m"
+			if cv := g.CurrentView(); cv != nil && cv.Name() == leftViewName {
+				prefix = "\033[1;36m> "
+				line = line + "\033[0m"
+			} else {
+				prefix = "> "
+			}
 		}
 		if _, err := fmt.Fprintln(v, prefix+line); err != nil {
 			return fmt.Errorf("writing state machine row: %w", err)
