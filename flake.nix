@@ -35,6 +35,7 @@
         # Add Agent Skills
         enable = [
           "doc-coauthoring"
+          "skill-creator"
         ];
       };
       selection = agentLib.selectSkills {
@@ -51,6 +52,14 @@
         skills-install-local = {
           type = "app";
           program = "${agentLib.mkLocalInstallScript {inherit pkgs bundle; targets = localTargets; }}/bin/skills-install-local";
+        };
+        build = {
+          type = "app";
+          program = toString (pkgs.writeShellScript "binary build..." ''
+            set -e
+            echo "binary build..."
+            go build -o ./dist/lazysfn ./cmd/lazysfn
+          '');
         };
       };
       devShells.default = pkgs.mkShell {
