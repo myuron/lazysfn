@@ -188,7 +188,12 @@ func (a *App) RenderLeftPanel(g *gocui.Gui) error {
 
 		prefix := "  "
 		if absIdx == a.smCursor {
-			prefix = "> "
+			if cv := g.CurrentView(); cv != nil && cv.Name() == leftViewName {
+				prefix = "\033[1;36m> "
+				line = line + "\033[0m"
+			} else {
+				prefix = "> "
+			}
 		}
 		if _, err := fmt.Fprintln(v, prefix+line); err != nil {
 			return fmt.Errorf("writing state machine row: %w", err)
@@ -212,26 +217,27 @@ func (a *App) setMainViewKeybindings(g *gocui.Gui) error {
 }
 
 // bindPanelKeys registers the common set of keybindings (j/k/q/Tab/h/l/R/?) for
-// the given panel view. j/k move the state machine selection cursor; q quits;
+// the given panel view. j/k move the cursor for the respective panel; q quits;
 // Tab/h/l change focus; R refreshes both panels; ? opens the keybinding help modal.
 // For the left panel, / enters search mode.
 func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
-	if err := g.SetKeybinding(viewName, 'j', gocui.ModNone, a.smCursorDown); err != nil {
+	// j/k navigate the cursor for the focused panel.
+	cursorDown := a.smCursorDown
+	cursorUp := a.smCursorUp
+	if viewName == rightViewName {
+		cursorDown = a.execCursorDown
+		cursorUp = a.execCursorUp
+	}
+	if err := g.SetKeybinding(viewName, 'j', gocui.ModNone, cursorDown); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
-	if err := g.SetKeybinding(viewName, 'k', gocui.ModNone, a.smCursorUp); err != nil {
+	if err := g.SetKeybinding(viewName, 'k', gocui.ModNone, cursorUp); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
 	if err := g.SetKeybinding(viewName, 'q', gocui.ModNone, quit); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
 	if err := g.SetKeybinding(viewName, gocui.KeyTab, gocui.ModNone, a.tabFocus); err != nil {
-		return fmt.Errorf("binding keys for %s: %w", viewName, err)
-	}
-	if err := g.SetKeybinding(viewName, 'h', gocui.ModNone, a.focusLeft); err != nil {
-		return fmt.Errorf("binding keys for %s: %w", viewName, err)
-	}
-	if err := g.SetKeybinding(viewName, 'l', gocui.ModNone, a.focusRight); err != nil {
 		return fmt.Errorf("binding keys for %s: %w", viewName, err)
 	}
 	if err := g.SetKeybinding(viewName, 'R', gocui.ModNone, a.refresh); err != nil {
@@ -275,6 +281,22 @@ func (a *App) smCursorUp(g *gocui.Gui, v *gocui.View) error {
 		}
 	}
 	return a.RenderLeftPanel(g)
+}
+
+// execCursorDown moves the execution history cursor down one row and re-renders the right panel.
+func (a *App) execCursorDown(g *gocui.Gui, v *gocui.View) error {
+	if a.execCursor < len(a.executions)-1 {
+		a.execCursor++
+	}
+	return a.RenderRightPanel(g, a.executions)
+}
+
+// execCursorUp moves the execution history cursor up one row and re-renders the right panel.
+func (a *App) execCursorUp(g *gocui.Gui, v *gocui.View) error {
+	if a.execCursor > 0 {
+		a.execCursor--
+	}
+	return a.RenderRightPanel(g, a.executions)
 }
 
 // enterSearchMode activates the incremental search bar below the left panel.

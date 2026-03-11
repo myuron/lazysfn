@@ -10,6 +10,9 @@ Thumbs.db
 .codex/
 .opencode/
 
+# Build output
+dist/
+
 # Go
 /lazysfn
 *.exe

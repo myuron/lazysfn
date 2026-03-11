@@ -46,16 +46,6 @@ func (a *App) tabFocus(g *gocui.Gui, v *gocui.View) error {
 	return a.focusView(g, next)
 }
 
-// focusLeft moves focus to the left panel when h is pressed.
-func (a *App) focusLeft(g *gocui.Gui, v *gocui.View) error {
-	return a.focusView(g, leftViewName)
-}
-
-// focusRight moves focus to the right panel when l is pressed.
-func (a *App) focusRight(g *gocui.Gui, v *gocui.View) error {
-	return a.focusView(g, rightViewName)
-}
-
 // refresh re-renders both panels with the current application state.
 func (a *App) refresh(g *gocui.Gui, v *gocui.View) error {
 	if err := a.RenderLeftPanel(g); err != nil {

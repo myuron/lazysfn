@@ -38,6 +38,35 @@ func StatusColor(status string) string {
 	}
 }
 
+// statusANSICode returns the ANSI escape code for the given color name.
+func statusANSICode(color string) string {
+	switch color {
+	case "green":
+		return "\033[32m"
+	case "red":
+		return "\033[31m"
+	case "blue":
+		return "\033[34m"
+	case "yellow":
+		return "\033[33m"
+	case "gray":
+		return "\033[90m"
+	default:
+		return ""
+	}
+}
+
+// ColorizeStatus wraps the status string with ANSI color escape codes.
+// Returns the original string unchanged if no color is defined for the status.
+func ColorizeStatus(status string) string {
+	color := StatusColor(status)
+	code := statusANSICode(color)
+	if code == "" {
+		return status
+	}
+	return code + status + "\033[0m"
+}
+
 // TruncateWithEllipsis truncates a string to maxLen characters, appending "..." if truncated.
 func TruncateWithEllipsis(s string, maxLen int) string {
 	if len(s) <= maxLen {
@@ -85,18 +114,27 @@ func FormatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
 
+// centerText centers a string within the given width by padding with spaces.
+// If the text is longer than width, it is returned as-is.
+func centerText(text string, width int) string {
+	if len(text) >= width {
+		return text
+	}
+	left := (width - len(text)) / 2
+	right := width - len(text) - left
+	return strings.Repeat(" ", left) + text + strings.Repeat(" ", right)
+}
+
 // FormatHeaderRow formats the column header row string with the given column widths.
-// Columns are separated by "│" box-drawing characters.
+// Columns are separated by "│" box-drawing characters. Headers are center-aligned.
 func FormatHeaderRow(widths ColumnWidths) string {
-	return fmt.Sprintf("%-*s│%-*s│%-*s│%-*s│%-*s│%-*s│%s",
-		widths.ID, "ID",
-		widths.Status, "STATUS",
-		widths.FailState, "FAIL STATE",
-		widths.StartTime, "START TIME",
-		widths.StopTime, "STOP TIME",
-		widths.Duration, "DURATION",
-		"INPUT PARAM",
-	)
+	return centerText("ID", widths.ID) + "│" +
+		centerText("STATUS", widths.Status) + "│" +
+		centerText("FAIL STATE", widths.FailState) + "│" +
+		centerText("START TIME", widths.StartTime) + "│" +
+		centerText("STOP TIME", widths.StopTime) + "│" +
+		centerText("DURATION", widths.Duration) + "│" +
+		centerText("INPUT PARAM", widths.InputParam)
 }
 
 // FormatSeparatorRow formats a horizontal separator row using "─" and "┼" characters.
@@ -149,7 +187,11 @@ func FilterMachines(machines []aws.StateMachine, query string) []aws.StateMachin
 // FormatExecutionRow formats an execution as a single row string with the given column widths.
 func FormatExecutionRow(exec aws.Execution, widths ColumnWidths) string {
 	id := TruncateWithEllipsis(exec.ID, widths.ID)
-	status := TruncateWithEllipsis(exec.Status, widths.Status)
+	plainStatus := TruncateWithEllipsis(exec.Status, widths.Status)
+	coloredStatus := ColorizeStatus(plainStatus)
+	// ANSI codes are invisible; pad with extra spaces to keep column alignment.
+	statusPadding := len(coloredStatus) - len(plainStatus)
+	status := coloredStatus
 
 	failState := ""
 	if exec.Status == "FAILED" || exec.Status == "TIMED_OUT" || exec.Status == "ABORTED" {
@@ -176,7 +218,7 @@ func FormatExecutionRow(exec aws.Execution, widths ColumnWidths) string {
 
 	return fmt.Sprintf("%-*s│%-*s│%-*s│%-*s│%-*s│%-*s│%s",
 		widths.ID, id,
-		widths.Status, status,
+		widths.Status+statusPadding, status,
 		widths.FailState, failState,
 		widths.StartTime, startTime,
 		widths.StopTime, stopTime,
