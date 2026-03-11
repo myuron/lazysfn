@@ -2,6 +2,8 @@
 
 AWS Step Functionsの情報をターミナルから確認できるTUIツール。lazygit風のUI/UXでStep Functionsの稼働状況を閲覧する。
 
+https://github.com/user-attachments/assets/a4ff0e7a-87cb-4f60-b3b0-07efa41ec525
+
 ## 機能
 
 - AWS profileの選択（`~/.aws/config` から読み込み）
