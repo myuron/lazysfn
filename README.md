@@ -1,60 +1,84 @@
 # lazysfn
 
-AWS Step Functionsの情報をターミナルから確認できるTUIツール。lazygit風のUI/UXでStep Functionsの稼働状況を閲覧する。
+A TUI tool for browsing AWS Step Functions from your terminal. Inspired by [lazygit](https://github.com/jesseduffield/lazygit).
 
 [https://github.com/user-attachments/assets/8f76fb05-b507-4118-8d61-6bbaa8145417](https://github.com/user-attachments/assets/39484e9b-fa0a-4abf-abaa-779c115b5f41)
 
-## 機能
+[日本語版 README](docs/README.ja.md)
 
-- AWS profileの選択（`~/.aws/config` から読み込み）
-- ステートマシン一覧の表示（Standardタイプのみ）
-- 実行履歴の表示（実行結果、失敗ステート、Input Param等）
-- ステータスの色分け表示
-- ステートマシン名のインクリメンタル検索
-- Vim準拠のキーバインド
+## Features
 
-## インストール
-```
+- AWS profile selection (loaded from `~/.aws/config`)
+- State machine listing (Standard type only, sorted by name)
+- Latest execution status shown with colored indicator `●`
+- Execution history (execution ID, status, failed state, start/stop time, duration, input params)
+- Color-coded statuses (SUCCEEDED: green, FAILED: red, RUNNING: blue, TIMED_OUT: yellow, ABORTED: gray)
+- Incremental search for state machine names
+- Keybinding help modal
+- Manual refresh
+- Error modal with recovery to profile selection
+- Vim-style keybindings
+
+## Tech Stack
+
+- Language: Go
+- TUI library: [gocui](https://github.com/jroimartin/gocui)
+- AWS SDK: [aws-sdk-go-v2](https://github.com/aws/aws-sdk-go-v2)
+
+## Installation
+
+### Build from source
+
+```sh
 git clone https://github.com/myuron/lazysfn
+cd lazysfn
+go build -o ./dist/lazysfn ./cmd/lazysfn
 ```
 
-## キーバインド
+### Nix
 
-### グローバル
+```sh
+nix flake run .#build
+```
 
-| キー | 動作 |
+## Keybindings
+
+### Global
+
+| Key | Action |
 |---|---|
-| `?` | キーバインドヘルプの表示 / 非表示 |
-| `q` | 終了 / ポップアップを閉じる |
-| `R` | 更新 |
+| `?` | Toggle keybinding help |
+| `q` | Quit / Close popup |
+| `R` | Refresh |
 
-### メイン画面
+### Main View
 
-| キー | 動作 |
+| Key | Action |
 |---|---|
-| `j` / `k` | カーソル下 / 上 |
-| `h` / `l` | 左パネル / 右パネルにフォーカス |
-| `Tab` | パネル切り替え |
-| `/` | インクリメンタル検索（左パネル） |
+| `j` / `k` | Cursor down / up |
+| `h` / `l` | Focus left / right panel |
+| `Tab` | Switch panel |
+| `/` | Incremental search (left panel) |
 
-### 検索モード
+### Search Mode
 
-| キー | 動作 |
+| Key | Action |
 |---|---|
-| `Esc` | 検索をキャンセル（全件表示に戻る） |
-| `Enter` | 検索を確定（フィルタを維持） |
+| Type | Filter state machines in real time |
+| `Esc` | Cancel search (show all) |
+| `Enter` | Confirm search (keep filter) |
 
-### プロファイル選択
+### Profile Selection
 
-| キー | 動作 |
+| Key | Action |
 |---|---|
-| `j` / `k` | カーソル下 / 上 |
-| `Enter` | プロファイルを選択 |
-| `q` | 終了 |
+| `j` / `k` | Cursor down / up |
+| `Enter` | Select profile |
+| `q` | Quit |
 
-## 開発環境
+## Development
 
-[Nix](https://nixos.org/) を使用。
+Requires [Nix](https://nixos.org/).
 
 ```sh
 nix develop
