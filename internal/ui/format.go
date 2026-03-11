@@ -85,18 +85,27 @@ func FormatTime(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
 
+// centerText centers a string within the given width by padding with spaces.
+// If the text is longer than width, it is returned as-is.
+func centerText(text string, width int) string {
+	if len(text) >= width {
+		return text
+	}
+	left := (width - len(text)) / 2
+	right := width - len(text) - left
+	return strings.Repeat(" ", left) + text + strings.Repeat(" ", right)
+}
+
 // FormatHeaderRow formats the column header row string with the given column widths.
-// Columns are separated by "│" box-drawing characters.
+// Columns are separated by "│" box-drawing characters. Headers are center-aligned.
 func FormatHeaderRow(widths ColumnWidths) string {
-	return fmt.Sprintf("%-*s│%-*s│%-*s│%-*s│%-*s│%-*s│%s",
-		widths.ID, "ID",
-		widths.Status, "STATUS",
-		widths.FailState, "FAIL STATE",
-		widths.StartTime, "START TIME",
-		widths.StopTime, "STOP TIME",
-		widths.Duration, "DURATION",
-		"INPUT PARAM",
-	)
+	return centerText("ID", widths.ID) + "│" +
+		centerText("STATUS", widths.Status) + "│" +
+		centerText("FAIL STATE", widths.FailState) + "│" +
+		centerText("START TIME", widths.StartTime) + "│" +
+		centerText("STOP TIME", widths.StopTime) + "│" +
+		centerText("DURATION", widths.Duration) + "│" +
+		centerText("INPUT PARAM", widths.InputParam)
 }
 
 // FormatSeparatorRow formats a horizontal separator row using "─" and "┼" characters.
