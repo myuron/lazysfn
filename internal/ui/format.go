@@ -38,6 +38,35 @@ func StatusColor(status string) string {
 	}
 }
 
+// statusANSICode returns the ANSI escape code for the given color name.
+func statusANSICode(color string) string {
+	switch color {
+	case "green":
+		return "\033[32m"
+	case "red":
+		return "\033[31m"
+	case "blue":
+		return "\033[34m"
+	case "yellow":
+		return "\033[33m"
+	case "gray":
+		return "\033[90m"
+	default:
+		return ""
+	}
+}
+
+// ColorizeStatus wraps the status string with ANSI color escape codes.
+// Returns the original string unchanged if no color is defined for the status.
+func ColorizeStatus(status string) string {
+	color := StatusColor(status)
+	code := statusANSICode(color)
+	if code == "" {
+		return status
+	}
+	return code + status + "\033[0m"
+}
+
 // TruncateWithEllipsis truncates a string to maxLen characters, appending "..." if truncated.
 func TruncateWithEllipsis(s string, maxLen int) string {
 	if len(s) <= maxLen {
@@ -158,7 +187,11 @@ func FilterMachines(machines []aws.StateMachine, query string) []aws.StateMachin
 // FormatExecutionRow formats an execution as a single row string with the given column widths.
 func FormatExecutionRow(exec aws.Execution, widths ColumnWidths) string {
 	id := TruncateWithEllipsis(exec.ID, widths.ID)
-	status := TruncateWithEllipsis(exec.Status, widths.Status)
+	plainStatus := TruncateWithEllipsis(exec.Status, widths.Status)
+	coloredStatus := ColorizeStatus(plainStatus)
+	// ANSI codes are invisible; pad with extra spaces to keep column alignment.
+	statusPadding := len(coloredStatus) - len(plainStatus)
+	status := coloredStatus
 
 	failState := ""
 	if exec.Status == "FAILED" || exec.Status == "TIMED_OUT" || exec.Status == "ABORTED" {
@@ -185,7 +218,7 @@ func FormatExecutionRow(exec aws.Execution, widths ColumnWidths) string {
 
 	return fmt.Sprintf("%-*s│%-*s│%-*s│%-*s│%-*s│%-*s│%s",
 		widths.ID, id,
-		widths.Status, status,
+		widths.Status+statusPadding, status,
 		widths.FailState, failState,
 		widths.StartTime, startTime,
 		widths.StopTime, stopTime,

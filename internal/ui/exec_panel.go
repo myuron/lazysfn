@@ -138,7 +138,14 @@ func calcErrorModalHeight(msg string) int {
 // Shows a spinner while loading, or the execution list when loaded.
 // The executions slice is stored in the App for use by the spinner goroutine.
 func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
+	// Reset cursor when a new execution list is loaded.
+	if len(executions) != len(a.executions) || (len(executions) > 0 && len(a.executions) > 0 && executions[0].ID != a.executions[0].ID) {
+		a.execCursor = 0
+	}
 	a.executions = executions
+	if a.execCursor >= len(a.executions) && len(a.executions) > 0 {
+		a.execCursor = len(a.executions) - 1
+	}
 
 	v, err := g.View(rightViewName)
 	if err != nil {
@@ -169,6 +176,11 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 
 	for i, exec := range a.executions {
 		row := FormatExecutionRow(exec, widths)
+		if i == a.execCursor {
+			// Apply bold cyan to the row, preserving status column colors.
+			// After each \033[0m reset, re-apply bold cyan so non-status parts stay cyan.
+			row = "\033[1;36m" + strings.ReplaceAll(row, "\033[0m", "\033[0m\033[1;36m") + "\033[0m"
+		}
 		if _, err := fmt.Fprintln(v, row); err != nil {
 			return fmt.Errorf("writing execution row: %w", err)
 		}

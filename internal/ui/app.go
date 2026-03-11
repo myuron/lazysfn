@@ -27,6 +27,7 @@ type App struct {
 	gui             *gocui.Gui
 	machines        []aws.StateMachine
 	smCursor        int
+	execCursor      int
 	executions      []aws.Execution
 	loading         atomic.Bool
 	spinnerFrame    int
@@ -73,6 +74,8 @@ func (a *App) Run() error {
 	defer g.Close()
 
 	a.gui = g
+	g.Highlight = true
+	g.SelFgColor = gocui.ColorCyan
 	g.SetManagerFunc(a.layout)
 
 	if err := a.setKeybindings(g); err != nil {

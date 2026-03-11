@@ -83,8 +83,7 @@ func helpContent() string {
    R       Refresh
 
  Main View
-   j / k   Cursor down / up
-   h / l   Focus left / right
+   j / k   Cursor down / up (per panel)
    Tab     Switch panel
    /       Incremental search (left panel)
 
