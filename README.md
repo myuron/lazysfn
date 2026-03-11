@@ -27,6 +27,25 @@ A TUI tool for browsing AWS Step Functions from your terminal. Inspired by [lazy
 
 ## Installation
 
+### go install
+
+```sh
+go install github.com/myuron/lazysfn/cmd/lazysfn@latest
+```
+
+### GitHub Releases
+
+Download a prebuilt binary from the [Releases](https://github.com/myuron/lazysfn/releases/latest) page.
+
+```sh
+# Example: macOS (Apple Silicon)
+curl -Lo lazysfn https://github.com/myuron/lazysfn/releases/latest/download/lazysfn-darwin-arm64
+chmod +x lazysfn
+sudo mv lazysfn /usr/local/bin/
+```
+
+Available binaries: `lazysfn-darwin-amd64`, `lazysfn-darwin-arm64`, `lazysfn-linux-amd64`, `lazysfn-windows-amd64.exe`
+
 ### Build from source
 
 ```sh
