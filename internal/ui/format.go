@@ -86,8 +86,9 @@ func FormatTime(t time.Time) string {
 }
 
 // FormatHeaderRow formats the column header row string with the given column widths.
+// Columns are separated by "│" box-drawing characters.
 func FormatHeaderRow(widths ColumnWidths) string {
-	return fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s %s",
+	return fmt.Sprintf("%-*s│%-*s│%-*s│%-*s│%-*s│%-*s│%s",
 		widths.ID, "ID",
 		widths.Status, "STATUS",
 		widths.FailState, "FAIL STATE",
@@ -96,6 +97,17 @@ func FormatHeaderRow(widths ColumnWidths) string {
 		widths.Duration, "DURATION",
 		"INPUT PARAM",
 	)
+}
+
+// FormatSeparatorRow formats a horizontal separator row using "─" and "┼" characters.
+func FormatSeparatorRow(widths ColumnWidths) string {
+	return strings.Repeat("─", widths.ID) + "┼" +
+		strings.Repeat("─", widths.Status) + "┼" +
+		strings.Repeat("─", widths.FailState) + "┼" +
+		strings.Repeat("─", widths.StartTime) + "┼" +
+		strings.Repeat("─", widths.StopTime) + "┼" +
+		strings.Repeat("─", widths.Duration) + "┼" +
+		strings.Repeat("─", widths.InputParam)
 }
 
 // HighlightMatch wraps the first case-insensitive occurrence of query in name
@@ -162,7 +174,7 @@ func FormatExecutionRow(exec aws.Execution, widths ColumnWidths) string {
 
 	inputParam := TruncateWithEllipsis(exec.InputParam, widths.InputParam)
 
-	return fmt.Sprintf("%-*s %-*s %-*s %-*s %-*s %-*s %s",
+	return fmt.Sprintf("%-*s│%-*s│%-*s│%-*s│%-*s│%-*s│%s",
 		widths.ID, id,
 		widths.Status, status,
 		widths.FailState, failState,

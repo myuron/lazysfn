@@ -162,10 +162,20 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 		return fmt.Errorf("writing header row: %w", err)
 	}
 
-	for _, exec := range a.executions {
+	separator := FormatSeparatorRow(widths)
+	if _, err := fmt.Fprintln(v, separator); err != nil {
+		return fmt.Errorf("writing separator row: %w", err)
+	}
+
+	for i, exec := range a.executions {
 		row := FormatExecutionRow(exec, widths)
 		if _, err := fmt.Fprintln(v, row); err != nil {
 			return fmt.Errorf("writing execution row: %w", err)
+		}
+		if i < len(a.executions)-1 {
+			if _, err := fmt.Fprintln(v, separator); err != nil {
+				return fmt.Errorf("writing separator row: %w", err)
+			}
 		}
 	}
 
