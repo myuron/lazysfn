@@ -2,7 +2,7 @@
 
 AWS Step Functionsの情報をターミナルから確認できるTUIツール。lazygit風のUI/UXでStep Functionsの稼働状況を閲覧する。
 
-https://github.com/user-attachments/assets/8f76fb05-b507-4118-8d61-6bbaa8145417
+[https://github.com/user-attachments/assets/8f76fb05-b507-4118-8d61-6bbaa8145417](https://github.com/user-attachments/assets/39484e9b-fa0a-4abf-abaa-779c115b5f41)
 
 ## 機能
 
