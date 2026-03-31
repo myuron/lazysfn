@@ -59,7 +59,30 @@ go build -o ./dist/lazysfn .
 ### Nix
 
 ```sh
-nix flake run .#build
+nix run github:myuron/lazysfn
+```
+
+To add as a flake input:
+
+```nix
+{
+  inputs = {
+    lazysfn.url = "github:myuron/lazysfn";
+  };
+
+  outputs = { self, nixpkgs, lazysfn, ... }: {
+    # Use the overlay to add pkgs.lazysfn
+    nixosConfigurations.example = nixpkgs.lib.nixosSystem {
+      modules = [{
+        nixpkgs.overlays = [ lazysfn.overlays.default ];
+        environment.systemPackages = [ pkgs.lazysfn ];
+      }];
+    };
+
+    # Or use the package directly
+    # lazysfn.packages.${system}.default
+  };
+}
 ```
 
 ## Keybindings
