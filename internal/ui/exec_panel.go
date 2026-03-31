@@ -207,9 +207,14 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 
 // AppendExecutions appends additional executions to the existing list and updates
 // the pagination token. Used for incremental loading when scrolling past the last item.
-func (a *App) AppendExecutions(g *gocui.Gui, executions []aws.Execution, nextToken *string) error {
+// forARN is the ARN that was used to fetch these executions; if the current SM has
+// changed since the fetch started, the stale results are silently discarded.
+func (a *App) AppendExecutions(g *gocui.Gui, executions []aws.Execution, nextToken *string, forARN string) error {
+	if forARN != a.GetCurrentSMARN() {
+		return nil
+	}
 	a.executions = append(a.executions, executions...)
-	a.execNextToken = nextToken
+	a.SetExecNextToken(nextToken)
 	return a.RenderRightPanel(g, a.executions)
 }
 

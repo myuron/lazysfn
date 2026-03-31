@@ -78,11 +78,12 @@ func run() error {
 			}
 			ctx, cancel := context.WithCancel(context.Background())
 			fetchCancel = cancel
-			// Reset pagination state under the lock so a concurrent
-			// load-more cannot read stale values.
+			fetchMu.Unlock()
+
+			// Reset pagination state so a stale load-more cannot fire
+			// for the previous state machine.
 			app.SetExecNextToken(nil)
 			app.SetCurrentSMARN(arn)
-			fetchMu.Unlock()
 
 			go func() {
 				app.SetLoading(true)
@@ -126,7 +127,7 @@ func run() error {
 					if err != nil {
 						return app.ShowErrorModal(g, fmt.Sprintf("loading more executions: %v", err))
 					}
-					return app.AppendExecutions(g, executions, nextToken)
+					return app.AppendExecutions(g, executions, nextToken, arn)
 				})
 			}()
 		}

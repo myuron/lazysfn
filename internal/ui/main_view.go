@@ -288,7 +288,7 @@ func (a *App) smCursorUp(g *gocui.Gui, v *gocui.View) error {
 func (a *App) execCursorDown(g *gocui.Gui, v *gocui.View) error {
 	if a.execCursor < len(a.executions)-1 {
 		a.execCursor++
-	} else if a.execNextToken != nil && !a.loadingMore.Load() {
+	} else if a.GetExecNextToken() != nil && !a.loadingMore.Load() {
 		if a.OnLoadMore != nil {
 			a.OnLoadMore()
 		}
