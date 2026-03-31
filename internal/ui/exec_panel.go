@@ -193,7 +193,24 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 		}
 	}
 
+	if a.loadingMore.Load() {
+		if _, err := fmt.Fprintln(v, ""); err != nil {
+			return fmt.Errorf("writing loading more spacer: %w", err)
+		}
+		if _, err := fmt.Fprintln(v, "Loading more..."); err != nil {
+			return fmt.Errorf("writing loading more indicator: %w", err)
+		}
+	}
+
 	return nil
+}
+
+// AppendExecutions appends additional executions to the existing list and updates
+// the pagination token. Used for incremental loading when scrolling past the last item.
+func (a *App) AppendExecutions(g *gocui.Gui, executions []aws.Execution, nextToken *string) error {
+	a.executions = append(a.executions, executions...)
+	a.execNextToken = nextToken
+	return a.RenderRightPanel(g, a.executions)
 }
 
 // defaultColumnWidths returns ColumnWidths for the right panel given its width.

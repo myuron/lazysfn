@@ -137,13 +137,16 @@ var failureEventTypes = map[types.HistoryEventType]bool{
 }
 
 // FetchExecutionHistory retrieves recent executions for a state machine.
-func (s *Service) FetchExecutionHistory(ctx context.Context, stateMachineARN string) ([]Execution, error) {
+// If nextToken is non-nil, it fetches the next page of results.
+// Returns the executions, the next page token (nil if no more pages), and any error.
+func (s *Service) FetchExecutionHistory(ctx context.Context, stateMachineARN string, nextToken *string) ([]Execution, *string, error) {
 	listOut, err := s.Client.ListExecutions(ctx, &sfn.ListExecutionsInput{
 		StateMachineArn: &stateMachineARN,
 		MaxResults:      20,
+		NextToken:       nextToken,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("listing executions: %w", err)
+		return nil, nil, fmt.Errorf("listing executions: %w", err)
 	}
 
 	executions := make([]Execution, len(listOut.Executions))
@@ -210,9 +213,9 @@ func (s *Service) FetchExecutionHistory(ctx context.Context, stateMachineARN str
 
 	wg.Wait()
 	if firstErr != nil {
-		return nil, firstErr
+		return nil, nil, firstErr
 	}
-	return executions, nil
+	return executions, listOut.NextToken, nil
 }
 
 func needsFailedState(status types.ExecutionStatus) bool {

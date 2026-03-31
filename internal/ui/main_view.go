@@ -284,9 +284,14 @@ func (a *App) smCursorUp(g *gocui.Gui, v *gocui.View) error {
 }
 
 // execCursorDown moves the execution history cursor down one row and re-renders the right panel.
+// When the cursor is at the last item and more pages are available, it triggers OnLoadMore.
 func (a *App) execCursorDown(g *gocui.Gui, v *gocui.View) error {
 	if a.execCursor < len(a.executions)-1 {
 		a.execCursor++
+	} else if a.execNextToken != nil && !a.loadingMore.Load() {
+		if a.OnLoadMore != nil {
+			a.OnLoadMore()
+		}
 	}
 	return a.RenderRightPanel(g, a.executions)
 }

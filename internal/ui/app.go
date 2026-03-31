@@ -30,7 +30,10 @@ type App struct {
 	execCursor      int
 	executions      []aws.Execution
 	loading         atomic.Bool
+	loadingMore     atomic.Bool
 	spinnerFrame    int
+	execNextToken   *string
+	currentSMARN    string
 
 	// searchMode indicates whether the incremental search bar is active.
 	searchMode bool
@@ -47,6 +50,10 @@ type App struct {
 	// OnSMSelect is called when the state machine cursor changes.
 	// Set by main.go to trigger execution history loading.
 	OnSMSelect func(arn string)
+
+	// OnLoadMore is called when the user scrolls past the last execution
+	// and more pages are available.
+	OnLoadMore func()
 
 	// inMainView tracks whether the TUI is in main view mode (vs profile selection).
 	inMainView bool
@@ -210,6 +217,21 @@ func (a *App) CurrentSMARN() string {
 	}
 	return ""
 }
+
+// SetExecNextToken sets the pagination token for execution history.
+func (a *App) SetExecNextToken(token *string) { a.execNextToken = token }
+
+// GetExecNextToken returns the current pagination token for execution history.
+func (a *App) GetExecNextToken() *string { return a.execNextToken }
+
+// SetCurrentSMARN sets the ARN of the currently selected state machine for pagination.
+func (a *App) SetCurrentSMARN(arn string) { a.currentSMARN = arn }
+
+// GetCurrentSMARN returns the ARN used for the current execution history pagination.
+func (a *App) GetCurrentSMARN() string { return a.currentSMARN }
+
+// SetLoadingMore sets the loading-more state for pagination.
+func (a *App) SetLoadingMore(loading bool) { a.loadingMore.Store(loading) }
 
 // quit exits the application by returning gocui.ErrQuit.
 func quit(g *gocui.Gui, v *gocui.View) error {
