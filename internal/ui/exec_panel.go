@@ -162,9 +162,10 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 		return nil
 	}
 
-	panelW, _ := v.Size()
+	panelW, panelH := v.Size()
 	widths := defaultColumnWidths(panelW)
 
+	// Always render fixed header (2 lines: header row + separator).
 	if _, err := fmt.Fprintln(v, FormatHeaderRow(widths)); err != nil {
 		return fmt.Errorf("writing header row: %w", err)
 	}
@@ -174,9 +175,41 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 		return fmt.Errorf("writing separator row: %w", err)
 	}
 
-	for i, exec := range a.executions {
-		row := FormatExecutionRow(exec, widths)
-		if i == a.execCursor {
+	// Snapshot shared state to avoid races with concurrent refreshes.
+	execs := a.executions
+	cursor := a.execCursor
+
+	// Each execution takes 2 lines (data + separator), except the last (no trailing separator).
+	// Available lines for execution rows = panelH - header - optional footer.
+	headerLines := 2
+	footerLines := 0
+	if a.loadingMore.Load() {
+		footerLines = 2 // spacer + indicator
+	}
+	availLines := panelH - headerLines - footerLines
+	if availLines < 0 {
+		availLines = 0
+	}
+	// Number of executions that fit in the viewport.
+	// Each row uses 2 lines (data + separator); the last visible row needs only 1.
+	visibleCount := (availLines + 1) / 2
+	if visibleCount > len(execs) {
+		visibleCount = len(execs)
+	}
+
+	// Compute start index so cursor is always within the visible window.
+	start := cursor - (visibleCount - 1)
+	if start < 0 {
+		start = 0
+	}
+	end := start + visibleCount
+	if end > len(execs) {
+		end = len(execs)
+	}
+
+	for i := start; i < end; i++ {
+		row := FormatExecutionRow(execs[i], widths)
+		if i == cursor {
 			if cv := g.CurrentView(); cv != nil && cv.Name() == rightViewName {
 				// Apply bold cyan to the row, preserving status column colors.
 				// After each \033[0m reset, re-apply bold cyan so non-status parts stay cyan.
@@ -186,7 +219,7 @@ func (a *App) RenderRightPanel(g *gocui.Gui, executions []aws.Execution) error {
 		if _, err := fmt.Fprintln(v, row); err != nil {
 			return fmt.Errorf("writing execution row: %w", err)
 		}
-		if i < len(a.executions)-1 {
+		if i < end-1 {
 			if _, err := fmt.Fprintln(v, separator); err != nil {
 				return fmt.Errorf("writing separator row: %w", err)
 			}
