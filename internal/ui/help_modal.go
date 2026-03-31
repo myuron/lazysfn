@@ -86,6 +86,7 @@ func helpContent() string {
    j / k   Cursor down / up (per panel)
    Tab     Switch panel
    /       Incremental search (left panel)
+   Enter   Show input detail (right panel)
 
  Search Mode
    Esc     Cancel search (show all)

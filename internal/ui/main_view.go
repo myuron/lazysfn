@@ -117,6 +117,13 @@ func (a *App) mainViewManager(g *gocui.Gui) error {
 		return fmt.Errorf("rendering right panel on resize: %w", err)
 	}
 
+	// Keep the detail modal on top during resize.
+	if _, err := g.View(detailModalName); err == nil {
+		if _, err := g.SetViewOnTop(detailModalName); err != nil {
+			return fmt.Errorf("setting detail modal on top: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -250,6 +257,12 @@ func (a *App) bindPanelKeys(g *gocui.Gui, viewName string) error {
 	if viewName == leftViewName {
 		if err := g.SetKeybinding(viewName, '/', gocui.ModNone, a.enterSearchMode); err != nil {
 			return fmt.Errorf("binding / for %s: %w", viewName, err)
+		}
+	}
+	// Enter on the right panel opens the input parameter detail modal.
+	if viewName == rightViewName {
+		if err := g.SetKeybinding(viewName, gocui.KeyEnter, gocui.ModNone, a.ShowDetailModal); err != nil {
+			return fmt.Errorf("binding Enter for %s: %w", viewName, err)
 		}
 	}
 	return nil
