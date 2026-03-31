@@ -18,7 +18,7 @@ const (
 // pretty-printed; otherwise it is shown as-is. The modal closes on Esc or q
 // and supports j/k scrolling.
 func (a *App) ShowDetailModal(g *gocui.Gui, v *gocui.View) error {
-	if len(a.executions) == 0 {
+	if len(a.executions) == 0 || a.execCursor < 0 || a.execCursor >= len(a.executions) {
 		return nil
 	}
 
@@ -138,6 +138,9 @@ func prettyPrintJSON(raw string) string {
 
 // truncateID truncates an execution ID to maxLen characters, appending "…" if truncated.
 func truncateID(id string, maxLen int) string {
+	if maxLen <= 0 {
+		return ""
+	}
 	runes := []rune(id)
 	if len(runes) <= maxLen {
 		return id

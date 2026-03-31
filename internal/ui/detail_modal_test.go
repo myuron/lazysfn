@@ -127,6 +127,71 @@ func TestShowDetailModal_CloseRestoresFocus(t *testing.T) {
 	}
 }
 
+func TestShowDetailModal_DuplicateOpenGuard(t *testing.T) {
+	g, err := gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
+		t.Skipf("cannot create gocui in test environment: %v", err)
+	}
+	defer g.Close()
+
+	app := NewApp([]config.Profile{{Name: "dev"}})
+	app.executions = []aws.Execution{
+		{ID: "exec-1", InputParam: `{"foo":"bar"}`},
+	}
+
+	if _, err := g.SetView(rightViewName, 0, 0, 79, 23); err != nil && err != gocui.ErrUnknownView {
+		t.Fatalf("SetView right: %v", err)
+	}
+	if _, err := g.SetCurrentView(rightViewName); err != nil {
+		t.Fatalf("SetCurrentView right: %v", err)
+	}
+
+	// Open once.
+	if err := app.ShowDetailModal(g, nil); err != nil {
+		t.Fatalf("first ShowDetailModal() error: %v", err)
+	}
+
+	// Open again — should be a no-op.
+	if err := app.ShowDetailModal(g, nil); err != nil {
+		t.Fatalf("second ShowDetailModal() error: %v", err)
+	}
+
+	// Modal must still exist and focus must remain on it.
+	if _, err := g.View(detailModalName); err != nil {
+		t.Errorf("expected detail modal to still exist after duplicate open")
+	}
+	cv := g.CurrentView()
+	if cv == nil || cv.Name() != detailModalName {
+		name := ""
+		if cv != nil {
+			name = cv.Name()
+		}
+		t.Errorf("expected focus on %q after duplicate open, got %q", detailModalName, name)
+	}
+}
+
+func TestShowDetailModal_CursorOutOfBounds(t *testing.T) {
+	g, err := gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
+		t.Skipf("cannot create gocui in test environment: %v", err)
+	}
+	defer g.Close()
+
+	app := NewApp([]config.Profile{{Name: "dev"}})
+	app.executions = []aws.Execution{
+		{ID: "exec-1", InputParam: `{}`},
+	}
+	app.execCursor = 5 // out of bounds
+
+	if err := app.ShowDetailModal(g, nil); err != nil {
+		t.Fatalf("ShowDetailModal() with out-of-bounds cursor returned error: %v", err)
+	}
+
+	if _, err := g.View(detailModalName); err == nil {
+		t.Errorf("expected detail modal view to not exist when cursor is out of bounds")
+	}
+}
+
 func TestTruncateID(t *testing.T) {
 	tests := []struct {
 		id     string
@@ -136,6 +201,8 @@ func TestTruncateID(t *testing.T) {
 		{"short", 10, "short"},
 		{"exactly-ten", 11, "exactly-ten"},
 		{"this-is-a-very-long-execution-id", 15, "this-is-a-very…"},
+		{"any", 0, ""},
+		{"any", -1, ""},
 	}
 	for _, tt := range tests {
 		got := truncateID(tt.id, tt.maxLen)
