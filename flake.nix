@@ -17,8 +17,18 @@
     };
   };
 
-  outputs = { nixpkgs, flake-utils, agent-skills, anthropic-skills, ... }:
-  flake-utils.lib.eachDefaultSystem (
+  outputs = { self, nixpkgs, flake-utils, agent-skills, anthropic-skills, ... }:
+  {
+    overlays.default = final: prev: {
+      lazysfn = final.buildGoModule {
+        pname = "lazysfn";
+        version = "0.1.0";
+        src = self;
+        vendorHash = "sha256-jKzpUttgDClvJNIjvup03dCecFKjBJPqtpAVn4HOEHA=";
+        subPackages = [ "." ];
+      };
+    };
+  } // flake-utils.lib.eachDefaultSystem (
     system:
     let
       pkgs = nixpkgs.legacyPackages.${system};
@@ -48,6 +58,13 @@
       };
     in
     {
+      packages.default = pkgs.buildGoModule {
+        pname = "lazysfn";
+        version = "0.1.0";
+        src = self;
+        vendorHash = "sha256-jKzpUttgDClvJNIjvup03dCecFKjBJPqtpAVn4HOEHA=";
+        subPackages = [ "." ];
+      };
       apps = {
         skills-install-local = {
           type = "app";
