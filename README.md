@@ -12,6 +12,8 @@ A TUI tool for browsing AWS Step Functions from your terminal. Inspired by [lazy
 - State machine listing (Standard type only, sorted by name)
 - Latest execution status shown with colored indicator `●`
 - Execution history (execution ID, status, failed state, start/stop time, duration, input params)
+- Pagination for execution history (auto-loads next page on scroll)
+- Input parameter detail modal (Enter on execution → pretty-printed JSON, j/k scroll)
 - Color-coded statuses (SUCCEEDED: green, FAILED: red, RUNNING: blue, TIMED_OUT: yellow, ABORTED: gray)
 - Incremental search for state machine names
 - Keybinding help modal
@@ -77,6 +79,7 @@ nix flake run .#build
 | `j` / `k` | Cursor down / up |
 | `h` / `l` | Focus left / right panel |
 | `Tab` | Switch panel |
+| `Enter` | Open input parameter detail (right panel) |
 | `/` | Incremental search (left panel) |
 
 ### Search Mode
