@@ -3,6 +3,7 @@ package ui
 
 import (
 	"fmt"
+	"sync"
 	"sync/atomic"
 
 	"github.com/jroimartin/gocui"
@@ -30,7 +31,11 @@ type App struct {
 	execCursor      int
 	executions      []aws.Execution
 	loading         atomic.Bool
+	loadingMore     atomic.Bool
 	spinnerFrame    int
+	paginationMu    sync.Mutex
+	execNextToken   *string
+	currentSMARN    string
 
 	// searchMode indicates whether the incremental search bar is active.
 	searchMode bool
@@ -47,6 +52,10 @@ type App struct {
 	// OnSMSelect is called when the state machine cursor changes.
 	// Set by main.go to trigger execution history loading.
 	OnSMSelect func(arn string)
+
+	// OnLoadMore is called when the user scrolls past the last execution
+	// and more pages are available.
+	OnLoadMore func()
 
 	// inMainView tracks whether the TUI is in main view mode (vs profile selection).
 	inMainView bool
@@ -210,6 +219,37 @@ func (a *App) CurrentSMARN() string {
 	}
 	return ""
 }
+
+// SetExecNextToken sets the pagination token for execution history.
+func (a *App) SetExecNextToken(token *string) {
+	a.paginationMu.Lock()
+	a.execNextToken = token
+	a.paginationMu.Unlock()
+}
+
+// GetExecNextToken returns the current pagination token for execution history.
+func (a *App) GetExecNextToken() *string {
+	a.paginationMu.Lock()
+	defer a.paginationMu.Unlock()
+	return a.execNextToken
+}
+
+// SetCurrentSMARN sets the ARN of the currently selected state machine for pagination.
+func (a *App) SetCurrentSMARN(arn string) {
+	a.paginationMu.Lock()
+	a.currentSMARN = arn
+	a.paginationMu.Unlock()
+}
+
+// GetCurrentSMARN returns the ARN used for the current execution history pagination.
+func (a *App) GetCurrentSMARN() string {
+	a.paginationMu.Lock()
+	defer a.paginationMu.Unlock()
+	return a.currentSMARN
+}
+
+// SetLoadingMore sets the loading-more state for pagination.
+func (a *App) SetLoadingMore(loading bool) { a.loadingMore.Store(loading) }
 
 // quit exits the application by returning gocui.ErrQuit.
 func quit(g *gocui.Gui, v *gocui.View) error {

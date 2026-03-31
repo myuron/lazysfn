@@ -246,7 +246,7 @@ func TestFetchExecutionHistory_Success(t *testing.T) {
 		},
 	}
 	svc := &Service{Client: mock, MaxConcurrency: 10}
-	executions, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test")
+	executions, _, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestFetchExecutionHistory_WithFailedState(t *testing.T) {
 		},
 	}
 	svc := &Service{Client: mock, MaxConcurrency: 10}
-	executions, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test")
+	executions, _, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -380,7 +380,7 @@ func TestFetchExecutionHistory_FailedStateTraversal(t *testing.T) {
 		},
 	}
 	svc := &Service{Client: mock, MaxConcurrency: 10}
-	executions, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test")
+	executions, _, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -423,7 +423,7 @@ func TestFetchExecutionHistory_WithInputParam(t *testing.T) {
 		},
 	}
 	svc := &Service{Client: mock, MaxConcurrency: 10}
-	executions, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test")
+	executions, _, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -442,7 +442,7 @@ func TestFetchExecutionHistory_APIError(t *testing.T) {
 		},
 	}
 	svc := &Service{Client: mock, MaxConcurrency: 10}
-	_, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test")
+	_, _, err := svc.FetchExecutionHistory(context.Background(), "arn:sm:test", nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

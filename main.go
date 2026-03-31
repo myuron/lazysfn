@@ -78,21 +78,53 @@ func run() error {
 			}
 			ctx, cancel := context.WithCancel(context.Background())
 			fetchCancel = cancel
+			// Reset pagination state inside the lock so OnLoadMore cannot
+			// capture stale values between cancellation and reset.
+			app.SetExecNextToken(nil)
+			app.SetCurrentSMARN(arn)
 			fetchMu.Unlock()
 
 			go func() {
 				app.SetLoading(true)
-				executions, err := svc.FetchExecutionHistory(ctx, arn)
+				executions, nextToken, err := svc.FetchExecutionHistory(ctx, arn, nil)
 				app.SetLoading(false)
-				if ctx.Err() != nil {
-					// A newer selection has already cancelled this request; discard.
-					return
-				}
 				g.Update(func(g *gocui.Gui) error {
+					if ctx.Err() != nil {
+						return nil
+					}
 					if err != nil {
 						return app.ShowErrorModal(g, fmt.Sprintf("loading executions: %v", err))
 					}
+					app.SetExecNextToken(nextToken)
 					return app.RenderRightPanel(g, executions)
+				})
+			}()
+		}
+
+		app.OnLoadMore = func() {
+			fetchMu.Lock()
+			if fetchCancel != nil {
+				fetchCancel()
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			fetchCancel = cancel
+			// Capture arn/token under the same lock to avoid races with OnSMSelect.
+			arn := app.GetCurrentSMARN()
+			token := app.GetExecNextToken()
+			app.SetLoadingMore(true)
+			fetchMu.Unlock()
+
+			go func() {
+				executions, nextToken, err := svc.FetchExecutionHistory(ctx, arn, token)
+				app.SetLoadingMore(false)
+				g.Update(func(g *gocui.Gui) error {
+					if ctx.Err() != nil {
+						return nil
+					}
+					if err != nil {
+						return app.ShowErrorModal(g, fmt.Sprintf("loading more executions: %v", err))
+					}
+					return app.AppendExecutions(g, executions, nextToken, arn)
 				})
 			}()
 		}
