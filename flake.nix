@@ -24,7 +24,7 @@
         pname = "lazysfn";
         version = "0.1.0";
         src = self;
-        vendorHash = "sha256-jKzpUttgDClvJNIjvup03dCecFKjBJPqtpAVn4HOEHA=";
+        vendorHash = "sha256-teCeUYxUZ7GtJLcojYj9PTQEwFFldBFGZjV4khRR260=";
         subPackages = [ "." ];
       };
     };
@@ -62,7 +62,7 @@
         pname = "lazysfn";
         version = "0.1.0";
         src = self;
-        vendorHash = "sha256-jKzpUttgDClvJNIjvup03dCecFKjBJPqtpAVn4HOEHA=";
+        vendorHash = "sha256-teCeUYxUZ7GtJLcojYj9PTQEwFFldBFGZjV4khRR260=";
         subPackages = [ "." ];
       };
       apps = {
